@@ -1,0 +1,21 @@
+apiVersion: v1
+entries:
+  kubeflow-proxy:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-09-15T13:09:50.218040414Z"
+    description: Helm chart that sets up a proxy for the Kubeflow Istio ingress gateway
+    digest: 60a32889a0ec09846814611a6c7abf84cc23124685f16ec73ec8c8fc0345cf08
+    keywords:
+    - kubeflow
+    - istio
+    - proxy
+    maintainers:
+    - name: TheCodingSheikh
+    name: kubeflow-proxy
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubeflow-proxy-0.1.0/kubeflow-proxy-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-09-15T13:09:50.218046535Z"
