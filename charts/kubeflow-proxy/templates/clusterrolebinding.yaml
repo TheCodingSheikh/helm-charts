@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubeflow-proxy.fullname" . }}
+  labels:
+    {{- include "kubeflow-proxy.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubeflow-proxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "kubeflow-proxy.fullname" . }}
+  apiGroup: "rbac.authorization.k8s.io"
