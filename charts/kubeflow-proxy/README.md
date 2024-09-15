@@ -7,7 +7,7 @@ This Helm chart sets up a proxy for the Kubeflow Istio ingress gateway. It forwa
 To install the chart from GitHub Pages:
 
 ```bash
-helm repo add my-charts https://<your-github-pages-url>/helm-charts
+helm repo add my-charts https://thecodingsheikh.github.io/helm-charts
 helm install kubeflow-proxy my-charts/kubeflow-proxy
 ```
 
