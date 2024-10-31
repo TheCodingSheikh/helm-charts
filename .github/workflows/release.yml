@@ -6,6 +6,11 @@ on:
       - main
     paths:
       - charts/**/Chart.yaml
+      
+permissions:
+  contents: write
+  packages: write
+  pages: write
 
 jobs:
   release:
