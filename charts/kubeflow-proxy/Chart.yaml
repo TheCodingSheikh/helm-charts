@@ -9,5 +9,6 @@ keywords:
   - kubeflow
   - istio
   - proxy
+  - ai
 maintainers:
   - name: TheCodingSheikh
