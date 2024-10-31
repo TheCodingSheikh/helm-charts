@@ -1,0 +1,13 @@
+apiVersion: v2
+name: deepeval-api
+description: Helm chart to deploy deepeval-api
+version: 0.1.0
+appVersion: "v0.3.0"
+sources:
+  - https://github.com/TheCodingSheikh/deepeval-api
+keywords:
+  - deepeval
+  - openai
+  - langfuse
+maintainers:
+  - name: TheCodingSheikh

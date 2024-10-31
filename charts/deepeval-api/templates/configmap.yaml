@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "deepeval-api.fullname" . }}
+  labels:
+    {{- include "deepeval-api.labels" . | nindent 4 }}
+data:
+  OPENAI_API_KEY: "{{ .Values.openaiApiKey }}"
+  USE_LOCAL_MODEL: "{{ .Values.useLocalModel }}"
+  MODEL_NAME: "{{ .Values.modelName }}"
+  BASE_URL: "{{ .Values.baseUrl }}"
+  API_KEY: "{{ .Values.apiKey }}"
