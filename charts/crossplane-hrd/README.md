@@ -151,11 +151,11 @@ components:
         list:
           sample-subnet1:
             ...
-          dependants:
-            RouteTable
-              list:
-                sample-table:
-                  ...
+            dependants:
+              RouteTable
+                list:
+                  sample-table:
+                    ...
 ```
 it will render the RouteTable like this:
 
