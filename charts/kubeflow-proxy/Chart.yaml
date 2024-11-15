@@ -10,5 +10,6 @@ keywords:
   - istio
   - proxy
   - ai
+  - ingress
 maintainers:
   - name: TheCodingSheikh

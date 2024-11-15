@@ -9,6 +9,7 @@ keywords:
   - compositions
   - kubernetes
   - helm
+  - terraform
 maintainers:
   - name: TheCodingSheikh
 sources:
