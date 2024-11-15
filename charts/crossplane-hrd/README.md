@@ -140,6 +140,39 @@ spec:
 
 If you notice `vpcIdRef` is automatically appended in Subnets, since they are dependants,
 
+you can have multi-level dependecies:
+for example
+
+```yaml
+components:
+  VPC:
+    ...
+      Subnet:
+        list:
+          sample-subnet1:
+            ...
+          dependants:
+            RouteTable
+              list:
+                sample-table:
+                  ...
+```
+it will render the RouteTable like this:
+
+```yaml
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: RouteTable
+metadata:
+  name: sample-vpc-sample-subnet1-sample-table-routetable
+spec:
+  forProvider:
+    ...
+    vpcIdRef: sample-vpc-vpc
+    subnetIdRef: sample-vpc-sample-subnet1-subnet
+```
+
+the dependecy can be as deep as you wish
+
 ### Customizing Resource Hierarchy
 
 - You can customize the reference keys used for parent-child relationships by setting `refKey` for each component. If no `refKey` is provided, a default key in the format `{parentKind}IdRef` will be used.
