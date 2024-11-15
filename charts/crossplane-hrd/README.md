@@ -16,13 +16,6 @@ helm install crossplane-hrd my-charts/crossplane-hrd
 
 ### Components Configuration
 
-The `values.yaml` file allows you to define hierarchical resources using a structured `components` field. Each component can have:
-- An `apiVersion`
-- A `kind`
-- A list of items, each with a `forProvider` field for its configuration
-- Optional `dependants` for child resources
-- Optional `refKey` for managing parent-child relationships dynamically
-
 Example:
 
 ```yaml
@@ -149,7 +142,8 @@ If you notice `vpcIdRef` is automatically appended in Subnets, since they are de
 
 ### Customizing Resource Hierarchy
 
-You can customize the reference keys used for parent-child relationships by setting `refKey` for each component. If no `refKey` is provided, a default key in the format `{parentKind}IdRef` will be used.
+- You can customize the reference keys used for parent-child relationships by setting `refKey` for each component. If no `refKey` is provided, a default key in the format `{parentKind}IdRef` will be used.
+- all dependats will inheret apiVersion from the parent, i can be overriden.
 
 For example:
 ```yaml
