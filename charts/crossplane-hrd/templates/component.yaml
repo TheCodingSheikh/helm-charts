@@ -25,7 +25,7 @@ spec:
   providerConfigRef:
     name: {{ $global.Values.providerConfig }}
   {{- end }}
-  forProvider: {{ toYaml $config.forProvider | nindent 4 }}
+  forProvider: {{- if $config.forProvider }} {{ toYaml $config.forProvider | nindent 4 }} {{- end }}
     {{- range $key, $value := $references }}
     {{ $key }}: 
       name: {{ $value }}
