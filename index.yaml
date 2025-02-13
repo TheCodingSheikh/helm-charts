@@ -3,6 +3,26 @@ entries:
   crossplane-hrd:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2025-02-13T14:30:46.492969902Z"
+    description: A Helm chart to manage Crossplane resources with ease of helm values.
+    digest: e7e3d1aea659bb9f4569c0927fd7c47e70b46845c0c251a1b1d2d6307b674287
+    keywords:
+    - crossplane
+    - compositions
+    - kubernetes
+    - helm
+    - terraform
+    maintainers:
+    - name: TheCodingSheikh
+    name: crossplane-hrd
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/crossplane-hrd
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/crossplane-hrd-0.2.1/crossplane-hrd-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-02-13T14:15:54.835609529Z"
     description: A Helm chart to manage Crossplane resources with ease of helm values.
     digest: f53a4e0aa88cd32b40fe7b0275604f341d9f78216d75cab6bb80b5b4256f1998
@@ -80,4 +100,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubeflow-proxy-0.1.0/kubeflow-proxy-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-13T14:15:54.835623545Z"
+generated: "2025-02-13T14:30:46.492983037Z"
