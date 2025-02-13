@@ -13,4 +13,4 @@ keywords:
 maintainers:
   - name: TheCodingSheikh
 sources:
-  - https://github.com/your-repo/crossplane-hrd
+  - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/crossplane-hrd
