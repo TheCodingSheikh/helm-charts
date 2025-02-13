@@ -193,6 +193,7 @@ forProvider:
   vpnNameRef: sample-vpc-vpc
 ```
 
+- You can also change the `providerConfigRef` by setting `providerConfig` value, it'll be applied for all manifests
 
 ## Features
 

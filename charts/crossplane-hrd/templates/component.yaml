@@ -1,4 +1,5 @@
 {{- define "render-component" -}}
+{{- $global := .global | default . -}}
 {{- $parent := .parent | default (dict) -}}
 {{- $parentKind := $parent.kind | default "" -}}
 {{- $parentName := $parent.name | default "" -}}
@@ -20,21 +21,27 @@ kind: {{ $kind }}
 metadata:
   name: {{ trimPrefix "-" (printf "%s-%s-%s" $parentName $name (lower $kind)) }}
 spec:
+  {{- if $global.Values.providerConfig }}
+  providerConfigRef:
+    name: {{ $global.Values.providerConfig }}
+  {{- end }}
   forProvider: {{ toYaml $config.forProvider | nindent 4 }}
     {{- range $key, $value := $references }}
-    {{ $key }}: {{ $value }}
+    {{ $key }}: 
+      name: {{ $value }}
     {{- end }}
 {{- $dependants := $config.dependants | default dict }}
   {{- range $childKind, $childConfig := $dependants }}
-{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references) }}
+{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references "global" $global) }}
   {{- end }}
 {{- end }}
 {{- end }}
 
 {{- define "render-components" -}}
-{{- range $kind, $config := . -}}
-{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict)) }}
-{{- end }}
+{{- $global := .global -}}
+{{- range $kind, $config := .components -}}
+{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict) "global" $global) }}
+{{- end -}}
 {{- end }}
 
-{{- include "render-components" .Values.components }}
+{{- include "render-components" (dict "components" .Values.components "global" .) }}
