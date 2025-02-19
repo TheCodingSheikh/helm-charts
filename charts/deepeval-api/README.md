@@ -7,8 +7,8 @@ This Helm chart deploys the Deepeval API, which enables evaluating LLM and conve
 To install the chart from GitHub Pages:
 
 ```bash
-helm repo add my-charts https://thecodingsheikh.github.io/helm-charts
-helm install deepeval-api my-charts/deepeval-api
+helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
+helm install deepeval-api thecodingsheikh/deepeval-api
 ```
 
 
@@ -25,7 +25,7 @@ apiKey: ""                # API key for local model authentication
 Example:
 
 ```bash
-helm upgrade deepeval-api my-charts/deepeval-api \
+helm upgrade deepeval-api thecodingsheikh/deepeval-api \
   --set useLocalModel=true \
   --set modelName="model-name" \
   --set baseUrl="http://your-model-base-url" \

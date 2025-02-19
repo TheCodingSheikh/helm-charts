@@ -7,8 +7,8 @@ This Helm chart sets up a proxy for the Kubeflow Istio ingress gateway. It forwa
 To install the chart from GitHub Pages:
 
 ```bash
-helm repo add my-charts https://thecodingsheikh.github.io/helm-charts
-helm install kubeflow-proxy my-charts/kubeflow-proxy
+helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
+helm install kubeflow-proxy thecodingsheikh/kubeflow-proxy
 ```
 
 ## Assumptions
@@ -33,7 +33,7 @@ ingress:
 Example:
 
 ```bash
-helm upgrade kubeflow-proxy my-charts/kubeflow-proxy \
+helm upgrade kubeflow-proxy thecodingsheikh/kubeflow-proxy \
   --set ingress.className=nginx \
   --set ingress.annotations.cert-manager.io/cluster-issuer=nameOfClusterIssuer \
   --set ingress.host=kubeflow.example.com \
@@ -55,7 +55,7 @@ istioIngressGatewayNamespace: my-namespace
 Example:
 
 ```bash
-helm upgrade kubeflow-proxy my-charts/kubeflow-proxy \
+helm upgrade kubeflow-proxy thecodingsheikh/kubeflow-proxy \
   --set istioIngressGatewaySvcName=my-istio-ingressgateway \
   --set istioIngressGatewaySvcPort=8084 \
   --set istioIngressGatewayNamespace=my-namespace

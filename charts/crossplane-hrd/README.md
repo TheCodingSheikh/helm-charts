@@ -8,8 +8,8 @@ This Helm chart provides an alternative to Crossplane's Compositions and Composi
 To install the chart from GitHub Pages:
 
 ```bash
-helm repo add my-charts https://thecodingsheikh.github.io/helm-charts
-helm install crossplane-hrd my-charts/crossplane-hrd
+helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
+helm install crossplane-hrd thecodingsheikh/crossplane-hrd
 ```
 
 ## Configuration
