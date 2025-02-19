@@ -100,4 +100,15 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubeflow-proxy-0.1.0/kubeflow-proxy-0.1.0.tgz
     version: 0.1.0
-generated: "2025-02-13T14:30:46.492983037Z"
+  postgrescluster:
+  - apiVersion: v2
+    appVersion: 5.7.3
+    created: "2025-02-19T09:56:26.309889004Z"
+    description: A Helm chart for Kubernetes
+    digest: f6461f282713cb56e36bfdec4d5936a7821dd47e4056f06d43b24fbe59c6597f
+    name: postgrescluster
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/postgrescluster-5.7.3/postgrescluster-5.7.3.tgz
+    version: 5.7.3
+generated: "2025-02-19T09:56:26.309905515Z"
