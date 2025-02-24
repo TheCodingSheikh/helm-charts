@@ -1,0 +1,11 @@
+{{- /*
+Generate all resources by processing each component defined in values.yaml
+*/}}
+{{- range $componentType, $component := .Values.components }}
+  {{- $apiVersion := $component.apiVersion }}
+  {{- $sortedInstances := keys $component.list | sortAlpha }}
+  {{- range $instanceName := $sortedInstances }}
+    {{- $instance := get $component.list $instanceName }}
+    {{- include "crossplane-components.process.component" (dict "ctx" $ "componentType" $componentType "apiVersion" $apiVersion "instance" $instance "instanceName" $instanceName "parentRefs" list "namePrefix" list "providerConfig" $component.providerConfig) }}
+  {{- end }}
+{{- end }}

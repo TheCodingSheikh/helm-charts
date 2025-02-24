@@ -12,188 +12,244 @@ helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
 helm install crossplane-hrd thecodingsheikh/crossplane-hrd
 ```
 
+Here's the updated documentation reflecting the latest implementation:
+
+# Crossplane Helm Chart Documentation
+
 ## Configuration
+
+### Global Configuration
+```yaml
+global:
+  useSimplifiedNames: false  # [true/false] Use simple references (vpcId) vs Crossplane-style (vpcIdRef.name)
+  providerConfig: aws-prod  # Global provider config for all resources
+```
 
 ### Components Configuration
 
-Example:
-
+#### Basic Example
 ```yaml
 components:
   Bucket:
     apiVersion: s3.aws.crossplane.io/v1beta1
     list:
-      test-bucket:
+      test:
         forProvider:
           objectOwnership: BucketOwnerEnforced
           locationConstraint: us-east-1
-      repl-dest:
-        forProvider:
-          acl: private
-          versioningConfiguration:
-            status: Enabled
-      bucket-3:
-        forProvider:
-          acl: private
-          versioningConfiguration:
-            status: Enabled
 ```
 
-The above configuration will render
-
+**Renders:**
 ```yaml
-apiVersion: s3.aws.crossplane.io/v1beta1
-kind: Bucket
-metadata:
-  name: bucket-3-bucket
-spec:
-  forProvider: 
-    acl: private
-    versioningConfiguration:
-      status: Enabled
 ---
 apiVersion: s3.aws.crossplane.io/v1beta1
 kind: Bucket
 metadata:
-  name: repl-dest-bucket
+  name: test-bucket
 spec:
-  forProvider: 
-    acl: private
-    versioningConfiguration:
-      status: Enabled
----
-apiVersion: s3.aws.crossplane.io/v1beta1
-kind: Bucket
-metadata:
-  name: test-bucket-bucket
-spec:
+  providerConfigRef:
+    name: aws-prod
   forProvider: 
     locationConstraint: us-east-1
     objectOwnership: BucketOwnerEnforced
-
 ```
 
-Another Example:
-
+### Nested Dependencies
 ```yaml
 components:
   VPC:
     apiVersion: ec2.aws.crossplane.io/v1beta1
     list:
-      sample-vpc:
+      main:
         forProvider:
           region: us-east-1
           cidrBlock: 10.0.0.0/16
         dependants:
           Subnet:
             list:
-              sample-subnet1:
+              web:
                 forProvider:
-                  region: us-east-1
                   availabilityZone: us-east-1b
                   cidrBlock: 10.0.1.0/24
-                  mapPublicIPOnLaunch: true
-              sample-subnet2:
+              db:
                 forProvider:
-                  region: us-east-1
                   availabilityZone: us-east-1c
                   cidrBlock: 10.0.2.0/24
-                  mapPublicIPOnLaunch: true
 ```
 
-This configuration will render
-
+**Rendered Output (`useSimplifiedNames: true`):**
 ```yaml
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: Subnet
-metadata:
-  name: sample-vpc-sample-subnet1-subnet
-spec:
-  forProvider: 
-    availabilityZone: us-east-1b
-    cidrBlock: 10.0.1.0/24
-    mapPublicIPOnLaunch: true
-    region: us-east-1
-    vpcIdRef: sample-vpc-vpc
----
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: Subnet
-metadata:
-  name: sample-vpc-sample-subnet2-subnet
-spec:
-  forProvider: 
-    availabilityZone: us-east-1c
-    cidrBlock: 10.0.2.0/24
-    mapPublicIPOnLaunch: true
-    region: us-east-1
-    vpcIdRef: sample-vpc-vpc
 ---
 apiVersion: ec2.aws.crossplane.io/v1beta1
 kind: VPC
 metadata:
-  name: sample-vpc-vpc
+  name: main-vpc
 spec:
-  forProvider: 
-    cidrBlock: 10.0.0.0/16
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
     region: us-east-1
+    cidrBlock: 10.0.0.0/16
+
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: main-web-subnet
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    availabilityZone: us-east-1b
+    cidrBlock: 10.0.1.0/24
+    vpcId: main
+
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: main-db-subnet
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    availabilityZone: us-east-1c
+    cidrBlock: 10.0.2.0/24
+    vpcId: main
 ```
+**Rendered Output (`useSimplifiedNames: false`):**
+```yaml
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: VPC
+metadata:
+  name: main-vpc
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    region: us-east-1
+    cidrBlock: 10.0.0.0/16
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: main-db-subnet
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    availabilityZone: us-east-1c
+    cidrBlock: 10.0.2.0/24
+    vpcIdRef:
+      name: main-vpc
+---
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: main-web-subnet
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    availabilityZone: us-east-1b
+    cidrBlock: 10.0.1.0/24
+    vpcIdRef:
+      name: main-vpc
 
-If you notice `vpcIdRef` is automatically appended in Subnets, since they are dependants,
-
-you can have multi-level dependecies:
-for example
-
+### Multi-Level Dependencies
 ```yaml
 components:
   VPC:
-    ...
-      Subnet:
-        list:
-          sample-subnet1:
-            ...
-            dependants:
-              RouteTable
-                list:
-                  sample-table:
-                    ...
+    apiVersion: ec2.aws.crossplane.io/v1beta1
+    list:
+      main-vpc:
+        forProvider:
+          region: us-east-1
+          cidrBlock: 10.0.0.0/16
+        dependants:
+          Subnet:
+            list:
+              web-subnet:
+                forProvider:
+                  cidrBlock: 10.0.1.0/24
+                dependants:
+                  RouteTable:
+                    list:
+                      public-rt:
+                        forProvider:
+                          routes: [...]
 ```
-it will render the RouteTable like this:
 
+**Rendered Output (`useSimplifiedNames: false`):**
 ```yaml
+---
 apiVersion: ec2.aws.crossplane.io/v1beta1
 kind: RouteTable
 metadata:
-  name: sample-vpc-sample-subnet1-sample-table-routetable
+  name: main-web-public-routetable
 spec:
+  providerConfigRef:
+    name: aws-prod
   forProvider:
-    ...
-    vpcIdRef: sample-vpc-vpc
-    subnetIdRef: sample-vpc-sample-subnet1-subnet
+    routes:
+    - '...'
+    vpcIdRef:
+      name: main-vpc
+    subnetIdRef:
+      name: main-web-subnet
 ```
 
-the dependecy can be as deep as you wish
+### Customization Options
 
-### Customizing Resource Hierarchy
-
-- You can customize the reference keys used for parent-child relationships by setting `refKey` for each component. If no `refKey` is provided, a default key in the format `{parentKind}IdRef` will be used.
-- all dependats will inheret apiVersion from the parent, i can be overriden.
-
-For example:
+#### 1. Reference Key Customization
 ```yaml
-VPC:
-  refKey: vpnNameRef
-```
-it will render
-```yaml
-forProvider: 
-  availabilityZone: us-east-1c
-  cidrBlock: 10.0.2.0/24
-  mapPublicIPOnLaunch: true
-  region: us-east-1
-  vpnNameRef: sample-vpc-vpc
+components:
+  VPC:
+    refKey: networkIdentifier  # Custom reference key
+    apiVersion: ec2.aws.crossplane.io/v1beta1
+    list:
+      main: {...}
 ```
 
-- You can also change the `providerConfigRef` by setting `providerConfig` value, it'll be applied for all manifests
+**Results in (`useSimplifiedNames: false`):**
+```yaml
+networkIdentifier: 
+  name: main-vpc  # Instead of vpcId
+```
+
+**Results in (`useSimplifiedNames: true`):**
+```yaml
+networkIdentifier: main  # Instead of vpcId
+```
+
+#### 2. API Version Override
+every dependant takes the parent apiVersion by default, you can override it like:
+```yaml
+dependants:
+  Subnet:
+    apiVersion: ec2.aws.upbound.io/v1beta1  # Override parent's API version
+    list: {...}
+```
+now all dependants of Subnet will take its apiVersion by default, unless overriden
+
+#### 3. Name Generation
+each manifest is generated in the format `{name}-{kind}`
+the dependant manifests are generated in the format `{parent-names..}-{name}-{kind}`
+
+### Provider Configuration
+Set globally for all resources:
+```yaml
+global:
+  providerConfig: aws-production
+```
+
+All resources will include:
+```yaml
+spec:
+  providerConfigRef:
+    name: aws-production
+```
 
 ## Features
 
