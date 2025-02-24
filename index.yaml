@@ -3,6 +3,26 @@ entries:
   crossplane-hrd:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2025-02-24T20:51:21.348883758Z"
+    description: A Helm chart to manage Crossplane resources with ease of helm values.
+    digest: b38b1162510acf76c40d2b64058e2d073be46d8eeda2da9478f53a642733117d
+    keywords:
+    - crossplane
+    - compositions
+    - kubernetes
+    - helm
+    - terraform
+    maintainers:
+    - name: TheCodingSheikh
+    name: crossplane-hrd
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/crossplane-hrd
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/crossplane-hrd-0.3.0/crossplane-hrd-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-02-13T14:30:46.492969902Z"
     description: A Helm chart to manage Crossplane resources with ease of helm values.
     digest: e7e3d1aea659bb9f4569c0927fd7c47e70b46845c0c251a1b1d2d6307b674287
@@ -111,4 +131,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/postgrescluster-5.7.3/postgrescluster-5.7.3.tgz
     version: 5.7.3
-generated: "2025-02-19T09:56:26.309905515Z"
+generated: "2025-02-24T20:51:21.635480867Z"
