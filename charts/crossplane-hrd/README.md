@@ -156,6 +156,7 @@ spec:
     cidrBlock: 10.0.1.0/24
     vpcIdRef:
       name: main-vpc
+```
 
 ### Multi-Level Dependencies
 ```yaml
