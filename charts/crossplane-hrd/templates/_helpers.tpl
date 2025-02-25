@@ -13,16 +13,15 @@ Recursively process a component and its dependants.
 
 {{- /* Global variables */}}
 {{- $global := $ctx.Values.global }}
-{{- $useSimplifiedNames := $global.useSimplifiedNames | default false }}
-
-{{- /* Get component configuration */}}
+{{- /* Component configuration */}}
 {{- $componentConfig := get $ctx.Values.components $componentType | default dict }}
+{{- $useSimplifiedNames := $componentConfig.useSimplifiedNames | default false }}
 {{- $defaultRefKey := ternary (printf "%sId" ($componentType | lower)) (printf "%sIdRef" ($componentType | lower)) $useSimplifiedNames }}
 {{- $refKey := $componentConfig.refKey | default $defaultRefKey }}
 
 {{- /* Build resource name */}}
 {{- $fullNameBase := (concat $namePrefix (list $instanceName) | join "-") }}
-{{- $resourceSuffix := (printf "-%s" ($componentType | lower)) }}
+{{- $resourceSuffix := ternary "" (printf "-%s" ($componentType | lower)) $useSimplifiedNames }}
 {{- $fullName := printf "%s%s" $fullNameBase $resourceSuffix }}
 
 {{- /* Determine providerConfig */}}
@@ -41,20 +40,20 @@ spec:
   {{- end }}
   forProvider:
     {{- toYaml ($instance.forProvider | default dict) | nindent 4 }}
-    {{- /* Add references from parent components */}}
+    {{- /* Add parent references */}}
     {{- range $parentRef := $parentRefs }}
-    {{- if $useSimplifiedNames }}
+      {{- if $parentRef.useSimplifiedNames }}
     {{ $parentRef.refKey }}: {{ $parentRef.instanceName }}
     {{- else }}
     {{ $parentRef.refKey }}:
       name: {{ $parentRef.fullName }}
     {{- end }}
     {{- end }}
-{{- /* Process dependants recursively */}}
+{{- /* Process dependants */}}
 {{- if $instance.dependants }}
   {{- range $dependantComponentType, $dependant := $instance.dependants }}
     {{- $dependantApiVersion := $dependant.apiVersion | default $apiVersion }}
-    {{- $currentParentRef := dict "kind" $componentType "refKey" $refKey "fullName" $fullName "instanceName" $instanceName }}
+    {{- $currentParentRef := dict "kind" $componentType "refKey" $refKey "fullName" $fullName "instanceName" $instanceName "useSimplifiedNames" $useSimplifiedNames }}
     {{- $newParentRefs := append $parentRefs $currentParentRef }}
     {{- $sortedDependantInstances := keys $dependant.list | sortAlpha }}
     {{- range $dependantInstanceName := $sortedDependantInstances }}
