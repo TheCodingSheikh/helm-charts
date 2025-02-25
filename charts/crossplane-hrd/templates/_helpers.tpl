@@ -21,7 +21,7 @@ Recursively process a component and its dependants.
 
 {{- /* Build resource name */}}
 {{- $fullNameBase := (concat $namePrefix (list $instanceName) | join "-") }}
-{{- $resourceSuffix := ternary "" (printf "-%s" ($componentType | lower)) $useSimplifiedNames }}
+{{- $resourceSuffix := (printf "-%s" ($componentType | lower)) }}
 {{- $fullName := printf "%s%s" $fullNameBase $resourceSuffix }}
 
 {{- /* Determine providerConfig */}}
