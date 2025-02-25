@@ -2,7 +2,7 @@ apiVersion: v2
 name: crossplane-hrd
 description: A Helm chart to manage Crossplane resources with ease of helm values.
 type: application
-version: 0.3.0
+version: 0.3.1
 appVersion: 1.0.0
 keywords:
   - crossplane
