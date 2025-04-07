@@ -1,5 +1,2 @@
-global:
-  useSimplifiedNames: false
-  providerConfig: ""
-
+providerConfig: ""
 components: {}

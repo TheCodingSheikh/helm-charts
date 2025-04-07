@@ -20,9 +20,7 @@ Here's the updated documentation reflecting the latest implementation:
 
 ### Global Configuration
 ```yaml
-global:
-  useSimplifiedNames: false  # [true/false] Use simple references (vpcId) vs Crossplane-style (vpcIdRef.name)
-  providerConfig: aws-prod  # Global provider config for all resources
+providerConfig: aws-prod  # Global provider config for all resources
 ```
 
 ### Components Configuration
@@ -77,47 +75,7 @@ components:
                   cidrBlock: 10.0.2.0/24
 ```
 
-**Rendered Output (`useSimplifiedNames: true`):**
-```yaml
----
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: VPC
-metadata:
-  name: main-vpc
-spec:
-  providerConfigRef:
-    name: aws-prod
-  forProvider:
-    region: us-east-1
-    cidrBlock: 10.0.0.0/16
-
----
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: Subnet
-metadata:
-  name: main-web-subnet
-spec:
-  providerConfigRef:
-    name: aws-prod
-  forProvider:
-    availabilityZone: us-east-1b
-    cidrBlock: 10.0.1.0/24
-    vpcId: main
-
----
-apiVersion: ec2.aws.crossplane.io/v1beta1
-kind: Subnet
-metadata:
-  name: main-db-subnet
-spec:
-  providerConfigRef:
-    name: aws-prod
-  forProvider:
-    availabilityZone: us-east-1c
-    cidrBlock: 10.0.2.0/24
-    vpcId: main
-```
-**Rendered Output (`useSimplifiedNames: false`):**
+**Rendered Output:**
 ```yaml
 ---
 apiVersion: ec2.aws.crossplane.io/v1beta1
@@ -182,7 +140,7 @@ components:
                           routes: [...]
 ```
 
-**Rendered Output (`useSimplifiedNames: false`):**
+**Rendered Output:**
 ```yaml
 ---
 apiVersion: ec2.aws.crossplane.io/v1beta1
@@ -213,15 +171,10 @@ components:
       main: {...}
 ```
 
-**Results in (`useSimplifiedNames: false`):**
+**Results in:**
 ```yaml
-networkIdentifier: 
-  name: main-vpc  # Instead of vpcId
-```
-
-**Results in (`useSimplifiedNames: true`):**
-```yaml
-networkIdentifier: main  # Instead of vpcId
+networkIdentifier: # Instead of vpcIdRef
+  name: main-vpc  
 ```
 
 #### 2. API Version Override
@@ -234,15 +187,110 @@ dependants:
 ```
 now all dependants of Subnet will take its apiVersion by default, unless overriden
 
-#### 3. Name Generation
+#### 3. Name Appending
+some resources have the field `name` under `forProvider`, if you want to automatically append this field with the value of the resouce key name u can use `appenName: true`:
+
+```yaml
+components:
+  VPC:
+    apiVersion: ec2.aws.crossplane.io/v1beta1
+    appenName: true
+    list:
+      main: {...}
+```
+
+**Results in:**
+```yaml
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: VPC
+metadata:
+  name: main-vpc
+spec:
+  providerConfigRef:
+    name: aws-prod
+  forProvider:
+    name: main # Here
+    ...
+```
+
+#### 4. Array Instead of Dict
+This chart allows to list resources as dict, like
+
+```yaml
+components:
+  Bucket:
+    apiVersion: s3.aws.crossplane.io/v1beta1
+    list:
+      test:
+        forProvider: {}
+      test2:
+        forProvider: {}
+      test3:
+        forProvider: {}
+```
+you can leave the forProvider empty, as some resources allows this, but this becomes noisy, this can be written as array.
+
+```yaml
+components:
+  Bucket:
+    apiVersion: s3.aws.crossplane.io/v1beta1
+    list:
+      - test
+      - test2
+      - test3
+```
+
+both will render same manifests, u can also use array in nested dependency the chart will append the reference keys automatically, u can combine this with `appendName: true` if name field is needed which will result in clean values structure
+
+for example,
+
+```yaml
+components:
+  Bucket:
+    apiVersion: s3.aws.crossplane.io/v1beta1
+    appendName: true
+    list:
+      - bucket1
+      - bucket2
+      - bucket3
+```
+
+**Renders:**
+```yaml
+---
+apiVersion: s3.aws.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: bucket1-bucket
+spec:
+  forProvider: 
+    name: bucket1
+---
+apiVersion: s3.aws.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: bucket2-bucket
+spec:
+  forProvider: 
+    name: bucket2
+---
+apiVersion: s3.aws.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: bucket3-bucket
+spec:
+  forProvider: 
+    name: bucket3
+```
+
+### Name Generation
 each manifest is generated in the format `{name}-{kind}`
 the dependant manifests are generated in the format `{parent-names..}-{name}-{kind}`
 
 ### Provider Configuration
 Set globally for all resources:
 ```yaml
-global:
-  providerConfig: aws-production
+providerConfig: aws-production
 ```
 
 All resources will include:
