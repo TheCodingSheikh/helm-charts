@@ -1,11 +1,74 @@
-{{- /*
-Generate all resources by processing each component defined in values.yaml
-*/}}
-{{- range $componentType, $component := .Values.components }}
-  {{- $apiVersion := $component.apiVersion }}
-  {{- $sortedInstances := keys $component.list | sortAlpha }}
-  {{- range $instanceName := $sortedInstances }}
-    {{- $instance := get $component.list $instanceName }}
-    {{- include "crossplane-components.process.component" (dict "ctx" $ "componentType" $componentType "apiVersion" $apiVersion "instance" $instance "instanceName" $instanceName "parentRefs" list "namePrefix" list "providerConfig" $component.providerConfig) }}
+{{- define "render-component" -}}
+{{- $global := .global | default . -}}
+{{- $parent := .parent | default (dict) -}}
+{{- $parentKind := $parent.kind | default "" -}}
+{{- $parentName := $parent.name | default "" -}}
+{{- $parentRefKey := $parent.refKey | default (printf "%sIdRef" (lower $parentKind)) -}}
+{{- $kind := .kind -}}
+{{- $apiVersion := .apiVersion -}}
+{{- $refKey := .refKey | default (printf "%sIdRef" (lower $kind)) -}}
+{{- $appendName := .appendName | default false }}
+
+{{- /* Collect all ancestor references */ -}}
+{{- $references := .references | default dict | deepCopy -}}
+{{- if and $parentKind $parentName }}
+{{- $_ := set $references $parentRefKey (trimPrefix "-" (printf "%s-%s" $parentName (lower $parentKind))) -}}
+{{- end }}
+
+{{- $list := .list }}
+
+
+{{- if kindIs "slice" $list }}
+  {{- $convertedList := dict }}
+  {{- range $i, $item := $list }}
+    {{- $key := printf "item-%d" $i }}
+    {{- $name := $item }}
+    {{- $_ := set $convertedList $name (dict "forProvider" dict) }}
+  {{- end }}
+  {{- $list = $convertedList }}
+{{- end }}
+
+
+
+{{- range $name, $config := $list }}
+---
+apiVersion: {{ $apiVersion }}
+kind: {{ $kind }}
+metadata:
+  name: {{ trimPrefix "-" (printf "%s-%s-%s" $parentName (kebabcase $name) (lower $kind)) }}
+spec:
+  {{- if $global.Values.providerConfig }}
+  providerConfigRef:
+    name: {{ $global.Values.providerConfig }}
+  {{- end }}
+
+  {{- $forProvider := $config.forProvider | default dict }}
+  {{- if $appendName }}
+    {{- $_ := set $forProvider "name" $name }}
+  {{- end }}
+  {{- range $key, $value := $references }}
+    {{- $_ := set $forProvider $key (dict "name" (kebabcase $value)) }}
+  {{- end }}
+  
+  {{- if $forProvider }}
+  forProvider:  {{ toYaml $forProvider | nindent 4 }} 
+  {{- else }}
+  forProvider: {}
+  {{- end}}
+
+{{- /* render dependants */}}
+{{- $dependants := $config.dependants | default dict }}
+  {{- range $childKind, $childConfig := $dependants }}
+{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references "appendName" $childConfig.appendName "global" $global) }}
   {{- end }}
 {{- end }}
+{{- end }}
+
+{{- define "render-components" -}}
+{{- $global := .global -}}
+{{- range $kind, $config := .components -}}
+{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict) "global" $global) }}
+{{- end -}}
+{{- end }}
+
+{{- include "render-components" (dict "components" .Values.components "global" .) }}
