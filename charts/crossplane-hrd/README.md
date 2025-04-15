@@ -12,10 +12,6 @@ helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
 helm install crossplane-hrd thecodingsheikh/crossplane-hrd
 ```
 
-Here's the updated documentation reflecting the latest implementation:
-
-# Crossplane Helm Chart Documentation
-
 ## Configuration
 
 ### Global Configuration

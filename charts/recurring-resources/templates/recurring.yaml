@@ -1,0 +1,35 @@
+{{- /*
+  Generic recurring resource template that auto-detects the iteration type.
+  1. Iterate over each recurring resource defined in .Values.recurringResources.
+  2. Use the dot‑separated string in rangeKey to traverse .Values.
+  3. Auto-detect whether the resulting object is a map or an array
+     based on its type (using typeOf).
+  4. For a map, iterate with key and value and pass a dict with "key" and "value" to tpl.
+  5. For an array, iterate over the items and pass each item as the context.
+*/ -}}
+{{- $recurringResources := .Values.recurringResources -}}
+{{- range $resourceName, $resource := $recurringResources }}
+  {{- /* Traverse the nested keys given by the dot-separated rangeKey */ -}}
+  {{- $keys := splitList "." $resource.rangeKey -}}
+  {{- $list := $.Values -}}
+  {{- range $i, $key := $keys }}
+    {{- $list = index $list $key -}}
+  {{- end }}
+  {{- if not $list }}
+    {{- fail (printf "No list found for rangeKey %q in recurringResources.%s" $resource.rangeKey $resourceName) }}
+  {{- end }}
+  {{- $listType := typeOf $list | trim -}}
+  {{- if eq $listType "map[string]interface {}" }}
+    {{- range $k, $v := $list }}
+---
+{{ tpl $resource.template (dict "key" $k "value" $v) }}
+    {{- end }}
+  {{- else if or (eq $listType "slice") (eq $listType "[]interface {}") }}
+    {{- range $item := $list }}
+---
+{{ tpl $resource.template $item }}
+    {{- end }}
+  {{- else }}
+    {{- fail (printf "Unsupported type %q for key %q. Expected map or array." $listType $resource.rangeKey) }}
+  {{- end }}
+{{- end }}

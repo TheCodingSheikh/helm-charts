@@ -1,0 +1,10 @@
+apiVersion: v2
+name: recurring-resources
+description: A chart that renders dynamic recurring resources.
+type: application
+version: 0.1.0
+appVersion: 1.0.0
+maintainers:
+  - name: TheCodingSheikh
+sources:
+  - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/recurring-resources
