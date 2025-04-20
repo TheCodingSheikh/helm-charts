@@ -1,0 +1,74 @@
+{{- $resources := .Values.resources -}}
+{{- range $resourceName, $resource := $resources }}
+  {{- $enabled := true }}
+  {{- if hasKey $resource "enabled" }}
+    {{- $enabled = $resource.enabled }}
+  {{- end }}
+  {{- if not $enabled }}
+    {{- continue }}
+  {{- end }}
+
+  {{- if hasKey $resource "template" }}
+    {{- /* Template Mode */ -}}
+    {{- if hasKey $resource "rangeKey" }}
+      {{- $keys := splitList "." $resource.rangeKey -}}
+      {{- $list := $.Values -}}
+      {{- range $i, $key := $keys }}
+        {{- $list = index $list $key -}}
+      {{- end }}
+      {{- if not $list }}
+        {{- fail (printf "No list found for rangeKey %q in resources.%s" $resource.rangeKey $resourceName) }}
+      {{- end }}
+      {{- $listType := typeOf $list | trim }}
+      {{- if eq $listType "map[string]interface {}" }}
+        {{- range $k, $v := $list }}
+{{- println }}
+---
+{{ tpl $resource.template (dict "key" $k "value" $v "Values" $.Values) }}
+        {{- end }}
+      {{- else if or (eq $listType "slice") (eq $listType "[]interface {}") }}
+        {{- range $item := $list }}
+{{- println }}
+---
+{{ tpl $resource.template (merge $item (dict "Values" $.Values)) }}
+        {{- end }}
+      {{- else }}
+        {{- fail (printf "Unsupported type %q for key %q. Expected map or array." $listType $resource.rangeKey) }}
+      {{- end }}
+    {{- else }}
+      {{- /* No rangeKey — execute template once */ -}}
+{{- println }}
+---
+{{ tpl $resource.template (dict "Values" $.Values) }}
+    {{- end }}
+  {{- else if and (hasKey $resource "apiVersion") (hasKey $resource "kind") (hasKey $resource "spec") }}
+    {{- /* Declarative Mode */ -}}
+    {{- $name := $resource.nameOverride | default $resourceName }}
+{{- println }}
+---
+apiVersion: {{ $resource.apiVersion }}
+kind: {{ $resource.kind }}
+metadata:
+  name: {{ $name | quote }}
+  {{- if $resource.namespace }}
+  namespace: {{ $resource.namespace | quote }}
+  {{- end }}
+  {{- if $resource.labels }}
+  labels:
+    {{- toYaml $resource.labels | nindent 4 }}
+  {{- end }}
+  {{- if $resource.annotations }}
+  annotations:
+    {{- toYaml $resource.annotations | nindent 4 }}
+  {{- end }}
+
+{{- println }}
+
+{{- toYaml $resource.spec }}
+
+{{/* Extend here for other kinds as needed */}}
+{{/* Optional: add .Values injection into other sections if needed */}}
+{{- else }}
+  {{- fail (printf "Unsupported resource definition for key: %s" $resourceName) }}
+{{- end }}
+{{- end }}
