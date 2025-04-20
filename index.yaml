@@ -211,6 +211,21 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/postgrescluster-5.7.3/postgrescluster-5.7.3.tgz
     version: 5.7.3
+  raw:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-04-20T16:34:08.121570911Z"
+    description: A chart that renders dynamic resources.
+    digest: b2f6e7407221d45db07c22b1ff9ad807c8e53069157debf1894f515cf5e5e93f
+    maintainers:
+    - name: TheCodingSheikh
+    name: raw
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/raw
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/raw-1.0.0/raw-1.0.0.tgz
+    version: 1.0.0
   recurring-resources:
   - apiVersion: v2
     appVersion: 1.0.0
@@ -226,4 +241,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-04-15T22:11:39.277688473Z"
+generated: "2025-04-20T16:34:08.121600997Z"
