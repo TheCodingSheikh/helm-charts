@@ -1,93 +1,42 @@
-# Generic Recurring Resources Helm Chart
+# Generic Resources Helm Chart
 
-This Helm chart provides a flexible mechanism to dynamically generate multiple Kubernetes manifests using a single generic configuration. It supports both inline templating and declarative resource definitions, allowing for reusable, composable infrastructure.
+This Helm chart lets you define Kubernetes resources (like ConfigMaps or Deployments) directly in your `values.yaml`. You can:
 
-## Features
+- Loop over arrays or maps
+- Use templates or full objects
+- Enable or disable resources
 
-- **Generic Templating:**  
-  Use a `template` string to generate Kubernetes resources (e.g., ConfigMaps, Deployments).
+⚠️ Only the `resources:` key is rendered into manifests. Everything else (like `applications`, `services`, `testKey`) is just data used in your templates.
 
-- **Declarative Resources:**  
-  Define full resources directly in values without writing a template.
+---
 
-- **Type Auto-Detection:**  
-  Automatically detects whether the source data is a map or array and iterates accordingly.
+## ✅ Features
 
-- **Deep Nested Values:**  
-  Support dot‑separated `rangeKey` paths to reach deeply nested values.
+- Write full Kubernetes resources or just templates
+- Loop over arrays or maps (auto-detects which)
+- Supports nested keys with dot notation
+- Render once or loop multiple times
+- Toggle rendering with `enabled: true/false`
+- When looping over a **map**, `.key` and `.value` will be available in the template
 
-- **Conditionally Enabled:**  
-  Each resource can be toggled on or off with an `enabled` flag (defaults to true).
+---
 
-- **Flexible Iteration:**  
-  If `rangeKey` is omitted, the template is rendered only once.
-
-## Installation
-
-To install the chart from GitHub Pages:
+## 🚀 Quick Install
 
 ```bash
 helm repo add thecodingsheikh https://thecodingsheikh.github.io/helm-charts
 helm install raw thecodingsheikh/raw -f values.yaml
 ```
 
-This chart is best used as a **dependency chart**.
+Use it as a **dependency chart** in your own Helm charts.
 
 ---
 
-## Values Configuration
+## 🛠 Basic Usage
 
-Each resource definition under `resources` can be defined in one of two modes:
-
-### 1. Template Mode
-Use a `template` string to render a YAML manifest dynamically. You can iterate over a list or map using `rangeKey`.
-
-#### Fields:
-- `enabled` (optional): Boolean (default `true`). Set to `false` to disable rendering.
-- `rangeKey` (optional): Dot-separated path to the data to iterate over. If omitted, the template is rendered once.
-- `template` (required): A YAML string templated using Helm's `tpl` function.
-
-### 2. Declarative Mode
-Use full `apiVersion`, `kind`, and `spec` to define a resource directly. Useful for static resources.
-
-#### Fields:
-- `enabled` (optional): Boolean (default `true`).
-- `apiVersion`, `kind`, `spec` (required): Kubernetes resource definition.
-- `nameOverride` (optional): Override the default name.
-- `namespace`, `labels`, `annotations` (optional): Metadata.
-
----
-
-## Examples
-
-### Example 1: Using an Array
-
-```yaml
-services:
-  - name: service1
-    port: 8080
-    protocol: TCP
-  - name: service2
-    port: 9090
-    protocol: TCP
-
-resources:
-  service-configmap:
-    enabled: true
-    rangeKey: services
-    template: |-
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: configmap-{{ .name }}
-      data:
-        SERVICE_NAME: "{{ .name }}"
-        SERVICE_PORT: "{{ .port }}"
-        SERVICE_PROTOCOL: "{{ .protocol }}"
-```
-
-### Example 2: Using a Map
-
+### ✅ Define Your Data
+You can define global values that will be used by this chart. This chart is designed to work great as a **dependency chart** inside your main Helm chart, so all values defined in the parent chart will be accessible here under `.Values`.
+You can define arrays, maps, or values to use in templates:
 ```yaml
 applications:
   list:
@@ -98,7 +47,22 @@ applications:
       image: redis:6.0
       replicas: 1
 
+services:
+  - name: service1
+    port: 8080
+    protocol: TCP
+
+  - name: service2
+    port: 9090
+    protocol: TCP
+
+testKey: test-value
+```
+
+### ✅ Define Resources
+```yaml
 resources:
+  # Loop over applications map
   application-deployment:
     enabled: true
     rangeKey: applications.list
@@ -120,28 +84,33 @@ resources:
             containers:
               - name: {{ .key }}
                 image: {{ .value.image }}
-```
-### Example 3: Normal Template
 
-```yaml
-testKey: test-value
-
-resources:
+  # Loop over services array
   service-configmap:
+    enabled: true
+    rangeKey: services
+    template: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: configmap-{{ .name }}
+      data:
+        SERVICE_NAME: "{{ .name }}"
+        SERVICE_PORT: "{{ .port }}"
+        SERVICE_PROTOCOL: "{{ .protocol }}"
+
+  # Render once (no loop)
+  single-config:
     enabled: true
     template: |-
       apiVersion: v1
       kind: ConfigMap
       metadata:
-        name: {{ .Values.testKey }}
+        name: configmap-{{ .Values.testKey }}
       data:
         TEST_KEY: {{ .Values.testKey }}
-```
 
-### Example 4: Static Resource (Declarative)
-
-```yaml
-resources:
+  # Declarative full resource
   app-parameters:
     enabled: true
     apiVersion: v1
@@ -157,16 +126,21 @@ resources:
         SAMPLE_KEY: value
 ```
 
-This will render a static ConfigMap with metadata and data.
+---
+
+## 💡 Tips
+
+- Use `.Values` inside templates to access global values.
+- `rangeKey` is optional; omit it to render the template once.
+- You can disable any resource by setting `enabled: false`.
+- `resources:` is the only key that generates manifests.
+- When iterating over a **map**, the template gets:
+  - `.key`: the map key (e.g. `app-a`)
+  - `.value`: the map value (e.g. `{ image: nginx, replicas: 2 }`)
 
 ---
 
-## Tips
-- You can use `{{ .Values }}` inside your templates to access global values.
-- When using `rangeKey`, the system will handle both maps and arrays.
-- `rangeKey` is optional. If omitted, the template is rendered once with `.Values` context.
+With just a clean `values.yaml`, you can manage multiple resources with less YAML and full control. 💡
 
----
-
-Enjoy flexible, reusable Helm manifests with just a few lines!
+Happy templating! 🚀
 
