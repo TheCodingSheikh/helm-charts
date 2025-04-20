@@ -41,7 +41,7 @@
 ---
 {{ tpl $resource.template (dict "Values" $.Values) }}
     {{- end }}
-  {{- else if and (hasKey $resource "apiVersion") (hasKey $resource "kind") (hasKey $resource "spec") }}
+  {{- else if and (hasKey $resource "apiVersion") (hasKey $resource "kind") }}
     {{- /* Declarative Mode */ -}}
     {{- $name := $resource.nameOverride | default $resourceName }}
 {{- println }}
@@ -63,8 +63,10 @@ metadata:
   {{- end }}
 
 {{- println }}
-
+{{- if $resource.spec }}
 {{- toYaml $resource.spec }}
+{{- end }}
+
 
 {{/* Extend here for other kinds as needed */}}
 {{/* Optional: add .Values injection into other sections if needed */}}
