@@ -214,6 +214,20 @@ entries:
   raw:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2025-04-20T19:34:03.833995722Z"
+    description: A chart that renders dynamic resources.
+    digest: cba54c64d22fa1bb97a56d64b492c9cc2ce39a82db2b042a63117fce67928064
+    maintainers:
+    - name: TheCodingSheikh
+    name: raw
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/raw
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/raw-1.0.1/raw-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-04-20T16:34:08.121570911Z"
     description: A chart that renders dynamic resources.
     digest: b2f6e7407221d45db07c22b1ff9ad807c8e53069157debf1894f515cf5e5e93f
@@ -241,4 +255,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-04-20T16:34:08.121600997Z"
+generated: "2025-04-20T19:34:03.83402134Z"
