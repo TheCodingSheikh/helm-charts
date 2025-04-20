@@ -64,7 +64,9 @@ testKey: test-value
 resources:
   # Loop over applications map
   application-deployment:
+    # Optional to enable/disable, if not set default to true
     enabled: true
+    # Optional to loop the template on this key - when looping a map the key-value keys are {{ .key }} and {{ .value }} (works only when using template key)
     rangeKey: applications.list
     template: |-
       apiVersion: apps/v1
@@ -87,7 +89,9 @@ resources:
 
   # Loop over services array
   service-configmap:
+    # Optional to enable/disable, if not set default to true
     enabled: true
+    # Optional to loop the template on this key (works only when using template key)
     rangeKey: services
     template: |-
       apiVersion: v1
@@ -101,6 +105,7 @@ resources:
 
   # Render once (no loop)
   single-config:
+    # Optional to enable/disable, if not set default to true
     enabled: true
     template: |-
       apiVersion: v1
@@ -112,15 +117,23 @@ resources:
 
   # Declarative full resource
   app-parameters:
+    # Optional to enable/disable, if not set default to true
     enabled: true
+    # Required when not using template
     apiVersion: v1
+    # Required when not using template
     kind: ConfigMap
+    # Optional to override the default name, which is the resource key
     nameOverride: configmap-app-parameters
+    # Optional to override the default namespace, which is the release namespace
     namespace: app
+    # Optional
     labels:
       app: app
+    # Optional
     annotations:
       configmap.oauth2-proxy.io/parameters: "true"
+    # Required when not using template, it will render all keys under spec as first level.
     spec:
       data:
         SAMPLE_KEY: value
