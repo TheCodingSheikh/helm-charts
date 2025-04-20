@@ -63,6 +63,7 @@ testKey: test-value
 ```yaml
 resources:
   # Declarative full resource
+  # This key is the default resource name unless overridden
   app-parameters:
     # Optional to enable/disable, if not set default to true
     enabled: true
