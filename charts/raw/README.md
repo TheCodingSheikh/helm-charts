@@ -39,7 +39,7 @@ You can define global values that will be used by this chart. This chart is desi
 You can define arrays, maps, or values to use in templates:
 ```yaml
 # THIS IS JUST AN DUMMY DATA FOR USAGE WITH rangeKey
-same-map:
+testMap:
   list:
     app-a:
       image: nginx:1.19
@@ -48,7 +48,7 @@ same-map:
       image: redis:6.0
       replicas: 1
 
-sample-array:
+testArray:
   - name: service1
     port: 8080
     protocol: TCP
@@ -92,7 +92,7 @@ resources:
     # Optional to enable/disable, if not set default to true
     enabled: true
     # Optional to loop the template on this key - when looping a map the key-value keys are {{ .key }} and {{ .value }} (works only when using template key)
-    rangeKey: sample-map.list
+    rangeKey: testMap.list
     template: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -117,7 +117,7 @@ resources:
     # Optional to enable/disable, if not set default to true
     enabled: true
     # Optional to loop the template on this key (works only when using template key)
-    rangeKey: sample-array
+    rangeKey: testArray
     template: |-
       apiVersion: v1
       kind: ConfigMap
