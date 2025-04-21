@@ -38,7 +38,8 @@ Use it as a **dependency chart** in your own Helm charts.
 You can define global values that will be used by this chart. This chart is designed to work great as a **dependency chart** inside your main Helm chart, so all values defined in the parent chart will be accessible here under `.Values`.
 You can define arrays, maps, or values to use in templates:
 ```yaml
-applications:
+# THIS IS JUST AN DUMMY DATA FOR USAGE WITH rangeKey
+same-map:
   list:
     app-a:
       image: nginx:1.19
@@ -47,7 +48,7 @@ applications:
       image: redis:6.0
       replicas: 1
 
-services:
+sample-array:
   - name: service1
     port: 8080
     protocol: TCP
@@ -61,6 +62,7 @@ testKey: test-value
 
 ### ✅ Define Resources
 ```yaml
+# DEFINE RAW HERE UNDER resources
 resources:
   # Declarative full resource
   # This key is the default resource name unless overridden
@@ -90,7 +92,7 @@ resources:
     # Optional to enable/disable, if not set default to true
     enabled: true
     # Optional to loop the template on this key - when looping a map the key-value keys are {{ .key }} and {{ .value }} (works only when using template key)
-    rangeKey: applications.list
+    rangeKey: sample-map.list
     template: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -115,7 +117,7 @@ resources:
     # Optional to enable/disable, if not set default to true
     enabled: true
     # Optional to loop the template on this key (works only when using template key)
-    rangeKey: services
+    rangeKey: sample-array
     template: |-
       apiVersion: v1
       kind: ConfigMap
