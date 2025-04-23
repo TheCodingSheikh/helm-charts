@@ -1,0 +1,54 @@
+{{- $root := . -}}
+{{- range $app, $config := .Values.resources }}
+  {{- if and (kindIs "map" $config) (hasKey $config "enabled") (eq $config.enabled true) }}
+    {{- if hasKey $config "path" }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ default $config.appNameOverride (kebabcase $app) }}
+  namespace: {{ $root.Values.argoNamespace }}
+  {{- if $config.labels }}
+  labels: 
+{{ toYaml $config.labels | indent 4 }}
+  {{- end }}
+  {{- if $config.annotations }}
+  annotations: 
+{{ toYaml $config.annotations | indent 4 }}
+  {{- end }}
+spec:
+  project: {{ $root.Values.argoProjectName }}
+  source:
+    repoURL:  {{ default $root.Values.kubeflowManifestsRepo $config.repoOverride }}
+    targetRevision: {{ default $root.Values.kubeflowManifestsRepoBranch $config.repoBranchOverride }}
+    path: {{ $config.path }}
+    {{- if $config.kustomize }}
+    kustomize: 
+{{ toYaml $config.kustomize | indent 6 }}
+    {{- end }}
+  destination:
+    server: {{ $root.Values.destinationServer }}
+    namespace: {{ $root.Values.argoNamespace }}
+  ignoreDifferences:
+  - group: argoproj.io
+    jsonPointers:
+    - /status
+    kind: Application
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 1m
+        factor: 2
+        maxDuration: 16m
+      limit: 10
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - ServerSideApply=true
+
+    {{- end }}
+  {{- end }}
+{{- end }}

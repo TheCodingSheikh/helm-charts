@@ -1,0 +1,121 @@
+argoProjectName: kubeflow
+argoNamespace: argocd
+destinationServer: https://kubernetes.default.svc
+kubeflowManifestsRepo: https://github.com/kubeflow/manifests
+kubeflowManifestsRepoBranch: HEAD
+
+resources:
+  certManagerBase:
+    enabled: true
+    path: common/cert-manager/base
+
+  certManagerKubeflowIssuer:
+    enabled: true
+    path: common/cert-manager/kubeflow-issuer/base
+
+  istioCrds:
+    enabled: true
+    path: common/istio-1-24/istio-crds/base
+
+  istioNamespace:
+    enabled: true
+    path: common/istio-1-24/istio-namespace/base
+
+  istioInstall:
+    enabled: true
+    path: common/istio-1-24/istio-install/overlays/oauth2-proxy
+
+  oauth2Proxy:
+    enabled: true
+    path: common/oauth2-proxy/overlays/m2m-dex-only
+
+  dex:
+    enabled: true
+    path: common/dex/overlays/oauth2-proxy
+
+  knativeServing:
+    enabled: true
+    path: common/knative/knative-serving/overlays/gateways
+
+  clusterLocalGateway:
+    enabled: true
+    path: common/istio-1-24/cluster-local-gateway/base
+
+  kubeflowNamespace:
+    enabled: true
+    path: common/kubeflow-namespace/base
+
+  networkPolicies:
+    enabled: true
+    path: common/networkpolicies/base
+
+  kubeflowRoles:
+    enabled: true
+    path: common/kubeflow-roles/base
+
+  kubeflowIstioResources:
+    enabled: true
+    path: common/istio-1-24/kubeflow-istio-resources/base
+
+  pipelines:
+    enabled: true
+    path: apps/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user
+
+  katib:
+    enabled: true
+    path: apps/katib/upstream/installs/katib-with-kubeflow
+
+  centralDashboard:
+    enabled: true
+    path: apps/centraldashboard/overlays/oauth2-proxy
+
+  admissionWebhook:
+    enabled: true
+    path: apps/admission-webhook/upstream/overlays/cert-manager
+
+  jupyterWebApp:
+    enabled: true
+    path: apps/jupyter/jupyter-web-app/upstream/overlays/istio
+
+  notebookController:
+    enabled: true
+    path: apps/jupyter/notebook-controller/upstream/overlays/kubeflow
+
+  profiles:
+    enabled: true
+    path: apps/profiles/upstream/overlays/kubeflow
+
+  pvcViewer:
+    enabled: true
+    path: apps/pvcviewer-controller/upstream/base
+
+  volumesWebApp:
+    enabled: true
+    path: apps/volumes-web-app/upstream/overlays/istio
+
+  tensorboardController:
+    enabled: true
+    path: apps/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
+
+  tensorboardsWebApp:
+    enabled: true
+    path: apps/tensorboard/tensorboards-web-app/upstream/overlays/istio
+
+  trainingOperator:
+    enabled: true
+    path: apps/training-operator/upstream/overlays/kubeflow
+
+  userNamespace:
+    enabled: true
+    path: common/user-namespace/base
+
+  kserve:
+    enabled: true
+    path: apps/kserve/kserve
+
+  kserveModelsWebApp:
+    enabled: true
+    path: apps/kserve/models-web-app/overlays/kubeflow
+
+raw:
+  resources: {}
