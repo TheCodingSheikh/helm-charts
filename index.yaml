@@ -182,6 +182,34 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/deepeval-api-0.1.0/deepeval-api-0.1.0.tgz
     version: 0.1.0
+  kubeflow:
+  - apiVersion: v2
+    appVersion: 1.10.0
+    created: "2025-04-23T19:50:41.341579703Z"
+    dependencies:
+    - name: raw
+      repository: https://thecodingsheikh.github.io/helm-charts
+      version: 1.0.1
+    description: 'A Helm chart that generates ArgoCD AppProject and Application resources
+      for Kubeflow components, preconfigured according to the upstream examples/kustomization.yaml
+      structure. '
+    digest: e2815ad9715d6a497f8b1bad728efa1d1b7b2d2172d16cdfd3b4d723c014703e
+    home: https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/kubeflow
+    keywords:
+    - kubeflow
+    - argocd
+    - helm
+    - gitops
+    - machine-learning
+    maintainers:
+    - name: TheCodingSheikh
+    name: kubeflow
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/kubeflow
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubeflow-1.0.0/kubeflow-1.0.0.tgz
+    version: 1.0.0
   kubeflow-proxy:
   - apiVersion: v2
     appVersion: 0.1.0
@@ -255,4 +283,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-04-20T19:34:03.83402134Z"
+generated: "2025-04-23T19:50:41.451757429Z"
