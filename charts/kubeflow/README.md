@@ -387,3 +387,7 @@ resources:
               redirect_url = "/oauth2/callback"
               relative_redirect_url = true
 ```
+
+### Goals
+
+- update cert-manager, istio-base, istiod, dex, oauth2-proxy to use their upstream official helm charts instead of manifets repo, with default values that match the kustomize patches in the manifets repo
