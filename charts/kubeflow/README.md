@@ -29,6 +29,9 @@ argoProjectName: kubeflow
 # Namespace where ArgoCD is installed
 argoNamespace: argocd
 
+# Common annotations for all argo apps
+commonAppAnnotations: {}
+
 # Destination Kubernetes cluster ArgoCD will deploy to
 destinationServer: https://kubernetes.default.svc
 

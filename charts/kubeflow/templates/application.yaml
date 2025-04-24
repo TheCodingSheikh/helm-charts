@@ -12,10 +12,11 @@ metadata:
   labels: 
 {{ toYaml $config.labels | indent 4 }}
   {{- end }}
-  {{- if $config.annotations }}
-  annotations: 
-{{ toYaml $config.annotations | indent 4 }}
-  {{- end }}
+{{- $annotations := merge ($root.Values.commonAppAnnotations | default (dict)) ($config.annotations | default (dict)) }}
+{{- if $annotations }}
+  annotations:
+{{ toYaml $annotations | indent 4 }}
+{{- end }}
 spec:
   project: {{ $root.Values.argoProjectName }}
   source:
@@ -48,7 +49,6 @@ spec:
     syncOptions:
     - ApplyOutOfSyncOnly=true
     - ServerSideApply=true
-
     {{- end }}
   {{- end }}
 {{- end }}

@@ -1,5 +1,6 @@
 argoProjectName: kubeflow
 argoNamespace: argocd
+commonAppAnnotations: {}
 destinationServer: https://kubernetes.default.svc
 kubeflowManifestsRepo: https://github.com/kubeflow/manifests
 kubeflowManifestsRepoBranch: HEAD
