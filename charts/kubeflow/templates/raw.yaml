@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubeflow-raw
+  namespace: {{ .Values.argoNamespace }}
+{{- $annotations := .Values.commonAppAnnotations }}
+{{- if $annotations }}
+  annotations:
+{{ toYaml $annotations | indent 4 }}
+{{- end }}
+spec:
+  project: {{ .Values.argoProjectName }}
+  source:
+    repoURL: https://thecodingsheikh.github.io/helm-charts
+    targetRevision: 1.0.1
+    chart: raw
+    helm:
+      values: | 
+{{ toYaml .Values.raw | indent 8 }}
+  destination:
+    server: {{ .Values.destinationServer }}
+    namespace: {{ .Values.argoNamespace }}
+{{ toYaml .Values.defaultAppSpec | indent 2 }}

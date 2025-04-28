@@ -41,14 +41,18 @@ kubeflowManifestsRepo: https://github.com/kubeflow/manifests
 # Git branch to use
 kubeflowManifestsRepoBranch: HEAD
 
+# Argo app specs
+defaultAppSpec: {}
+
 # All resources you want to deploy
 resources:
-  <componentName>: < this will be the argo app name converted to [kebabcase](https://helm.sh/docs/chart_template_guide/function_list/#kebabcase)
+  <componentName>: < this will be the argo app name converted to [kebabcase](https://helm.sh/docs/chart_template_guide/function_list/#kebabcase) and prepended by "kubeflow-"
     enabled: true | false (required)
     path: <path/in/repo> (required)
     appNameOverride: custom argo app name (optional)
     repoOverride: custom repo source (optional - defaults to `kubeflowManifestsRepo`)
     repoBranchOverride: custom repo branch (optional - defaults to `kubeflowManifestsRepoBranch`)
+    appSpecOverride: custom argo app specs (optional - defaults to `defaultAppSpec`)
     labels: argo app labels (optional)
     annotations: argo app annotations (optional)
     kustomize: [kustomize config for argo app](https://argo-cd.readthedocs.io/en/latest/user-guide/kustomize/#patches) (optional)
@@ -69,6 +73,27 @@ argoNamespace: argocd
 destinationServer: https://kubernetes.default.svc
 kubeflowManifestsRepo: https://github.com/kubeflow/manifests
 kubeflowManifestsRepoBranch: HEAD
+defaultAppSpec:
+  ignoreDifferences:
+  - group: argoproj.io
+    jsonPointers:
+    - /status
+    kind: Application
+  syncPolicy:
+    automated:
+      allowEmpty: true
+      prune: true
+      selfHeal: true
+    retry:
+      backoff:
+        duration: 20s
+        factor: 3
+        maxDuration: 20s
+      limit: 30
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - ServerSideApply=true
+    - CreateNamespace=true
 
 resources:
   certManagerBase:
@@ -107,7 +132,7 @@ resources:
     enabled: true
     path: common/istio-1-24/cluster-local-gateway/base
 
-  kubeflowNamespace:
+  namespace:
     enabled: true
     path: common/kubeflow-namespace/base
 
@@ -115,11 +140,11 @@ resources:
     enabled: true
     path: common/networkpolicies/base
 
-  kubeflowRoles:
+  roles:
     enabled: true
     path: common/kubeflow-roles/base
 
-  kubeflowIstioResources:
+  istioResources:
     enabled: true
     path: common/istio-1-24/kubeflow-istio-resources/base
 

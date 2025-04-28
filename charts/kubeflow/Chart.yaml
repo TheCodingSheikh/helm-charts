@@ -5,7 +5,7 @@ description: >
   preconfigured according to the upstream examples/kustomization.yaml structure.
 
 type: application
-version: 1.0.1
+version: 1.0.2
 appVersion: "1.10.0"
 
 home: https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/kubeflow
@@ -19,8 +19,3 @@ keywords:
   - helm
   - gitops
   - machine-learning
-
-dependencies:
-  - name: raw
-    version: 1.0.1
-    repository: https://thecodingsheikh.github.io/helm-charts
