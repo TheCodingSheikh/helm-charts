@@ -30,18 +30,26 @@ resources:
   certManagerBase:
     enabled: true
     path: common/cert-manager/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-100"
 
   certManagerKubeflowIssuer:
     enabled: true
     path: common/cert-manager/kubeflow-issuer/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-90"
 
   istioCrds:
     enabled: true
     path: common/istio-1-24/istio-crds/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-80"
 
   istioNamespace:
     enabled: true
     path: common/istio-1-24/istio-namespace/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-70"
 
   istioInstall:
     enabled: true
