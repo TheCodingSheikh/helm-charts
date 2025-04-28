@@ -18,7 +18,7 @@ defaultAppSpec:
     retry:
       backoff:
         duration: 20s
-        factor: 3
+        factor: 1
         maxDuration: 20s
       limit: 30
     syncOptions:
