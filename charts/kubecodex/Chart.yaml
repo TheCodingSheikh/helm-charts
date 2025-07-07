@@ -1,0 +1,17 @@
+apiVersion: v2
+name: kubecodex
+description: A Helm chart for deploying kubecodex style projects
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - kubecodex
+  - helm
+  - kubernetes
+  - gitops
+  - argocd
+maintainers:
+  - name: TheCodingSheikh
+sources:
+  - https://github.com/TheCodingSheikh/kubecodex
+home: https://github.com/TheCodingSheikh/kubecodex

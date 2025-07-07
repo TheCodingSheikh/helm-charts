@@ -1,0 +1,4 @@
+argoNamespace: argocd
+repoURL: https://github.com/TheCodingSheikh/kubecodex
+projects:
+  - project-1
