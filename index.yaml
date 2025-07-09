@@ -348,6 +348,16 @@ entries:
     version: 0.1.0
   postgrescluster:
   - apiVersion: v2
+    appVersion: 5.7.4
+    created: "2025-07-09T10:19:58.788925398Z"
+    description: A Helm chart for Kubernetes
+    digest: 7e760556a5ac60dfcc7c2b386234d9386f33f8cb6a7913ff04bfb3eaf24663f6
+    name: postgrescluster
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/postgrescluster-5.7.4/postgrescluster-5.7.4.tgz
+    version: 5.7.4
+  - apiVersion: v2
     appVersion: 5.7.3
     created: "2025-02-19T09:56:26.309889004Z"
     description: A Helm chart for Kubernetes
@@ -401,4 +411,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-07-07T18:53:09.366430493Z"
+generated: "2025-07-09T10:19:58.788962097Z"
