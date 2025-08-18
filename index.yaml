@@ -185,6 +185,27 @@ entries:
   kubecodex:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2025-08-18T14:27:18.180841396Z"
+    description: A Helm chart for deploying kubecodex style projects
+    digest: 7418e8584ccee6a19e0c5fcb5f6f295e2cec6f1d9f2567138431e16c54f8d87b
+    home: https://github.com/TheCodingSheikh/kubecodex
+    keywords:
+    - kubecodex
+    - helm
+    - kubernetes
+    - gitops
+    - argocd
+    maintainers:
+    - name: TheCodingSheikh
+    name: kubecodex
+    sources:
+    - https://github.com/TheCodingSheikh/kubecodex
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubecodex-1.1.0/kubecodex-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-07-07T18:53:09.366367152Z"
     description: A Helm chart for deploying kubecodex style projects
     digest: 5c6878d4fdd674cca2fd04cd0a7b13c626cff2c0bc4a91867a24ab35c7c437de
@@ -411,4 +432,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-07-09T10:19:58.788962097Z"
+generated: "2025-08-18T14:27:18.180877303Z"
