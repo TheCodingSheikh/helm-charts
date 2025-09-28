@@ -1,4 +1,5 @@
-argoNamespace: argocd
 repoURL: https://github.com/TheCodingSheikh/kubecodex
+namespace: argocd
 projects:
-  - project-1
+  - name: project-1
+    preserveResourcesOnDeletion: true

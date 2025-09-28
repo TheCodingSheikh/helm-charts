@@ -5,8 +5,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: PruneLast=true
     argocd.argoproj.io/sync-wave: "-2"
-  name: "{{ . }}"
-  namespace:  "{{ $.Values.argoNamespace }}"
+  name: "{{ .name }}"
+  namespace:  "{{ $.Values.namespace }}"
 spec:
   clusterResourceWhitelist:
     - group: "*"

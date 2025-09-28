@@ -4,8 +4,8 @@ kind: ApplicationSet
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-  name: "{{ . }}"
-  namespace: "{{ $.Values.argoNamespace }}"
+  name: "{{ .name }}"
+  namespace: "{{ $.Values.namespace }}"
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=default"]
@@ -15,7 +15,7 @@ spec:
       revision: "HEAD"
       requeueAfterSeconds: 20
       files:
-        - path: "apps/*/{{ . }}/**/config.yaml"
+        - path: "apps/*/{{ .name }}/**/config.yaml"
       values:
         cluster: "{{ `{{index .path.segments 1}}` }}"
         project: "{{ `{{index .path.segments 2`}} }}"
@@ -24,7 +24,7 @@ spec:
   template:
     metadata:
       name: '{{ `{{ default ( printf "%s-%s" .values.cluster ( .values.app_path | replace "/" "-" | trimPrefix ( printf "apps-%s-%s-" .values.cluster .values.project ) ) ) .appName }}` }}'
-      namespace: "{{ $.Values.argoNamespace }}"
+      namespace: "{{ $.Values.namespace }}"
     spec:
       destination:
         namespace: '{{ `{{ default ( .values.app_path | replace "/" "-" | trimPrefix ( printf "apps-%s-%s-" .values.cluster .values.project ) ) .destNamespace }}` }}'
@@ -66,6 +66,18 @@ spec:
           prune: false
           selfHeal: false
         {{ `{{- end }}` }}
+        syncOptions:
+        {{ `{{- if ne .createNamespace false }}` }}
+          - CreateNamespace=true
+        {{ `{{- end }}` }}
+        {{ `{{- range .additionalSyncOptions }}` }}
+          - {{ `{{ . }}` }}
+        {{ `{{- end }}` }}     
+  {{- if .preserveResourcesOnDeletion }}
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  {{ else }}
   syncPolicy: {}
+  {{ end }}
 ---
 {{- end }}
