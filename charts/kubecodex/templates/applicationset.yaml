@@ -72,7 +72,11 @@ spec:
         {{ `{{- end }}` }}
         {{ `{{- range .additionalSyncOptions }}` }}
           - {{ `{{ . }}` }}
-        {{ `{{- end }}` }}     
+        {{ `{{- end }}` }}
+      {{ `{{- if .ignoreDifferences }}` }}
+      ignoreDifferences:
+    {{ `{{ toYaml .ignoreDifferences | indent 4 }}` }}
+      {{ `{{- end }}` }}
   {{- if .preserveResourcesOnDeletion }}
   syncPolicy:
     preserveResourcesOnDeletion: true
