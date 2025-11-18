@@ -59,6 +59,10 @@ spec:
         {{ `{{ $key }}` }}: {{ `{{ $value | quote }}` }}
         {{ `{{- end }}` }}
     spec:
+      {{ `{{- if ne .createNamespace false }}` }}
+      destination:
+        name: "{{ `{{ default .values.cluster .destServer }}` }}"
+      {{ `{{- end }}` }}
       syncPolicy:
         automated:
         {{ `{{- if ne .autoSync false }}` }}
