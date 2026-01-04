@@ -70,9 +70,10 @@ raw:
 ```yaml
 argoProjectName: kubeflow
 argoNamespace: argocd
+commonAppAnnotations: {}
 destinationServer: https://kubernetes.default.svc
 kubeflowManifestsRepo: https://github.com/kubeflow/manifests
-kubeflowManifestsRepoBranch: HEAD
+kubeflowManifestsRepoBranch: v1.11-branch
 defaultAppSpec:
   ignoreDifferences:
   - group: argoproj.io
@@ -87,7 +88,7 @@ defaultAppSpec:
     retry:
       backoff:
         duration: 20s
-        factor: 3
+        factor: 1
         maxDuration: 20s
       limit: 30
     syncOptions:
@@ -99,22 +100,30 @@ resources:
   certManagerBase:
     enabled: true
     path: common/cert-manager/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-100"
 
   certManagerKubeflowIssuer:
     enabled: true
     path: common/cert-manager/kubeflow-issuer/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-90"
 
   istioCrds:
     enabled: true
-    path: common/istio-1-24/istio-crds/base
+    path: common/istio/istio-crds/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-80"
 
   istioNamespace:
     enabled: true
-    path: common/istio-1-24/istio-namespace/base
+    path: common/istio/istio-namespace/base
+    annotations:
+      argocd.argoproj.io/sync-wave: "-70"
 
   istioInstall:
     enabled: true
-    path: common/istio-1-24/istio-install/overlays/oauth2-proxy
+    path: common/istio/istio-install/overlays/oauth2-proxy
 
   oauth2Proxy:
     enabled: true
@@ -130,7 +139,7 @@ resources:
 
   clusterLocalGateway:
     enabled: true
-    path: common/istio-1-24/cluster-local-gateway/base
+    path: common/istio/cluster-local-gateway/base
 
   namespace:
     enabled: true
@@ -146,67 +155,74 @@ resources:
 
   istioResources:
     enabled: true
-    path: common/istio-1-24/kubeflow-istio-resources/base
+    path: common/istio/kubeflow-istio-resources/base
 
   pipelines:
     enabled: true
-    path: apps/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user
+    path: applications/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user
 
   katib:
     enabled: true
-    path: apps/katib/upstream/installs/katib-with-kubeflow
+    path: applications/katib/upstream/installs/katib-with-kubeflow
 
   centralDashboard:
     enabled: true
-    path: apps/centraldashboard/overlays/oauth2-proxy
+    path: applications/centraldashboard/overlays/oauth2-proxy
 
   admissionWebhook:
     enabled: true
-    path: apps/admission-webhook/upstream/overlays/cert-manager
+    path: applications/admission-webhook/upstream/overlays/cert-manager
 
   jupyterWebApp:
     enabled: true
-    path: apps/jupyter/jupyter-web-app/upstream/overlays/istio
+    path: applications/jupyter/jupyter-web-app/upstream/overlays/istio
 
   notebookController:
     enabled: true
-    path: apps/jupyter/notebook-controller/upstream/overlays/kubeflow
+    path: applications/jupyter/notebook-controller/upstream/overlays/kubeflow
 
   profiles:
     enabled: true
-    path: apps/profiles/upstream/overlays/kubeflow
+    path: applications/profiles/pss
 
   pvcViewer:
     enabled: true
-    path: apps/pvcviewer-controller/upstream/base
+    path: applications/pvcviewer-controller/upstream/base
 
   volumesWebApp:
     enabled: true
-    path: apps/volumes-web-app/upstream/overlays/istio
+    path: applications/volumes-web-app/upstream/overlays/istio
 
   tensorboardController:
     enabled: true
-    path: apps/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
+    path: applications/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
 
   tensorboardsWebApp:
     enabled: true
-    path: apps/tensorboard/tensorboards-web-app/upstream/overlays/istio
+    path: applications/tensorboard/tensorboards-web-app/upstream/overlays/istio
 
   trainingOperator:
     enabled: true
-    path: apps/training-operator/upstream/overlays/kubeflow
+    path: applications/trainer/overlays
 
   userNamespace:
     enabled: true
     path: common/user-namespace/base
-
+    # kustomize:
+    #   components:
+    #     - ../../security/PSS/dynamic/baseline
   kserve:
     enabled: true
-    path: apps/kserve/kserve
+    path: applications/kserve/kserve
 
   kserveModelsWebApp:
     enabled: true
-    path: apps/kserve/models-web-app/overlays/kubeflow
+    path: applications/kserve/models-web-app/overlays/kubeflow
+
+  sparkOperator:
+    enabled: true
+    path: applications/spark/spark-operator/overlays/kubeflow
+    
 ```
 ### Sample `values.yaml` Override
 
