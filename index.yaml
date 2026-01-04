@@ -248,6 +248,29 @@ entries:
     version: 1.0.0
   kubeflow:
   - apiVersion: v2
+    appVersion: 1.11.0
+    created: "2026-01-04T13:39:11.213854468Z"
+    description: 'A Helm chart that generates ArgoCD AppProject and Application resources
+      for Kubeflow components, preconfigured according to the upstream examples/kustomization.yaml
+      structure. '
+    digest: 66f95de3fffa8553a95ef8fef2e26f93af506c3d3a4072e8fdc9f789aed5c3b2
+    home: https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/kubeflow
+    keywords:
+    - kubeflow
+    - argocd
+    - helm
+    - gitops
+    - machine-learning
+    maintainers:
+    - name: TheCodingSheikh
+    name: kubeflow
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/kubeflow
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/kubeflow-1.0.5/kubeflow-1.0.5.tgz
+    version: 1.0.5
+  - apiVersion: v2
     appVersion: 1.10.0
     created: "2025-04-28T19:07:31.272635908Z"
     description: 'A Helm chart that generates ArgoCD AppProject and Application resources
@@ -453,4 +476,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2025-11-18T19:11:09.102541069Z"
+generated: "2026-01-04T13:39:11.213910683Z"
