@@ -1,2 +1,30 @@
-providerConfig: ""
+# Settings applied to every rendered resource. Any resource can override them,
+# and a resource with `inherit: true` passes its settings down to all of its
+# dependants. See the README for the merge rules.
+global:
+  # Rendered as spec.providerConfigRef, e.g.
+  #   providerConfigRef:
+  #     name: aws-prod
+  #     kind: ClusterProviderConfig   # Crossplane v2 namespaced resources only
+  providerConfigRef: {}
+
+  # Rendered as metadata.namespace. Only for namespaced managed resources
+  # (Crossplane v2, e.g. *.m.upbound.io); leave empty for cluster scoped ones.
+  namespace: ""
+
+  # Rendered as metadata.labels
+  labels: {}
+
+  # Rendered as metadata.annotations
+  annotations: {}
+
+  # Any other spec field, rendered under spec, e.g.
+  #   spec:
+  #     deletionPolicy: Orphan
+  #     managementPolicies: ["*"]
+  #     initProvider: {}
+  # forProvider and providerConfigRef are not allowed here.
+  spec: {}
+
+# Resources to render, keyed by kind. See the README for all fields.
 components: {}

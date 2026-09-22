@@ -1,5 +1,4 @@
 {{- define "render-component" -}}
-{{- $global := .global | default . -}}
 {{- $parent := .parent | default (dict) -}}
 {{- $parentKind := $parent.kind | default "" -}}
 {{- $parentName := $parent.name | default "" -}}
@@ -8,6 +7,10 @@
 {{- $apiVersion := .apiVersion -}}
 {{- $refKey := .refKey | default (printf "%sIdRef" (lower $kind)) -}}
 {{- $appendName := .appendName | default false }}
+{{- $path := .path -}}
+
+{{- /* Settings (providerConfigRef, namespace, labels, annotations, spec) this level starts from */ -}}
+{{- $base := .settings | default dict -}}
 
 {{- /* Collect all ancestor references */ -}}
 {{- $references := .references | default dict | deepCopy -}}
@@ -31,44 +34,79 @@
 
 
 {{- range $name, $config := $list }}
+{{- $config = $config | default dict }}
+{{- $resourcePath := printf "%s.list.%s" $path $name }}
+
+{{- /* Resource settings: inherited base overridden by the resource's own values */}}
+{{- $settings := deepCopy $base }}
+{{- include "crossplane-hrd.applySettings" (dict "dst" $settings "src" $config "path" $resourcePath) }}
+
+{{- $inherit := false }}
+{{- if not (kindIs "invalid" $config.inherit) }}
+  {{- if not (kindIs "bool" $config.inherit) }}
+    {{- fail (printf "%s.inherit must be true or false" $resourcePath) }}
+  {{- end }}
+  {{- $inherit = $config.inherit }}
+{{- end }}
 ---
 apiVersion: {{ $apiVersion }}
 kind: {{ $kind }}
 metadata:
   name: {{ trimPrefix "-" (printf "%s-%s-%s" $parentName (kebabcase $name) (lower $kind)) }}
+  {{- with $settings.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  {{- with $settings.labels }}
+  labels: {{- include "crossplane-hrd.stringMap" . | nindent 4 }}
+  {{- end }}
+  {{- with $settings.annotations }}
+  annotations: {{- include "crossplane-hrd.stringMap" . | nindent 4 }}
+  {{- end }}
+{{- $spec := deepCopy ($settings.spec | default dict) }}
+{{- with $settings.providerConfigRef }}
+  {{- $_ := set $spec "providerConfigRef" . }}
+{{- end }}
 spec:
-  {{- if $global.Values.providerConfig }}
-  providerConfigRef:
-    name: {{ $global.Values.providerConfig }}
+  {{- with $spec }}
+  {{- toYaml . | nindent 2 }}
   {{- end }}
 
-  {{- $forProvider := $config.forProvider | default dict }}
+  {{- $forProvider := deepCopy ($config.forProvider | default dict) }}
   {{- if $appendName }}
     {{- $_ := set $forProvider "name" $name }}
   {{- end }}
   {{- range $key, $value := $references }}
     {{- $_ := set $forProvider $key (dict "name" (kebabcase $value)) }}
   {{- end }}
-  
+
   {{- if $forProvider }}
-  forProvider:  {{ toYaml $forProvider | nindent 4 }} 
+  forProvider:  {{ toYaml $forProvider | nindent 4 }}
   {{- else }}
   forProvider: {}
   {{- end}}
 
-{{- /* render dependants */}}
+{{- /* render dependants, passing this resource's settings down only when inherit is enabled */}}
+{{- $childSettings := ternary $settings $base $inherit }}
 {{- $dependants := $config.dependants | default dict }}
   {{- range $childKind, $childConfig := $dependants }}
-{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references "appendName" $childConfig.appendName "global" $global) }}
+{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references "appendName" $childConfig.appendName "settings" $childSettings "path" (printf "%s.dependants.%s" $resourcePath $childKind)) }}
   {{- end }}
 {{- end }}
 {{- end }}
 
 {{- define "render-components" -}}
-{{- $global := .global -}}
-{{- range $kind, $config := .components -}}
-{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict) "global" $global) }}
+{{- $values := .Values -}}
+
+{{- /* Global settings; the deprecated top-level providerConfig is applied first so global.providerConfigRef wins */ -}}
+{{- $settings := dict -}}
+{{- with $values.providerConfig }}
+  {{- $_ := set $settings "providerConfigRef" (dict "name" .) }}
+{{- end }}
+{{- include "crossplane-hrd.applySettings" (dict "dst" $settings "src" ($values.global | default dict) "path" "global") -}}
+
+{{- range $kind, $config := $values.components -}}
+{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict) "appendName" $config.appendName "settings" $settings "path" (printf "components.%s" $kind)) }}
 {{- end -}}
 {{- end }}
 
-{{- include "render-components" (dict "components" .Values.components "global" .) }}
+{{- include "render-components" . }}
