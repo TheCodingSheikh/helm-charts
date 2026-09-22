@@ -1,0 +1,16 @@
+global:
+  providerConfigRef:
+    name: aws-prod
+  namespace: infra
+  labels:
+    team: platform
+    env: prod
+  annotations:
+    owner: sre
+  spec:
+    deletionPolicy: Orphan
+    managementPolicies: ["*"]
+    initProvider:
+      tags:
+        a: "1"
+        b: "2"

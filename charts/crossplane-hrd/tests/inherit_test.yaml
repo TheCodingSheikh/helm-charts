@@ -1,0 +1,297 @@
+suite: inherit
+templates:
+  - templates/resources.yaml
+values:
+  - values/tree.yaml
+  - values/global.yaml
+tests:
+  - it: applies the resource's settings on top of the global ones
+    set: &mainInherits
+      components.VPC.list.main.inherit: true
+      components.VPC.list.main.providerConfigRef: {name: pc-main}
+      components.VPC.list.main.namespace: ns-main
+      components.VPC.list.main.labels: {tier: net, env: main}
+      components.VPC.list.main.annotations: {by: main}
+      components.VPC.list.main.spec: {deletionPolicy: Delete, initProvider: {tags: {b: main}}}
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts: &hasMainSettings
+      - equal: {path: metadata.namespace, value: ns-main}
+      - equal: {path: metadata.labels, value: {team: platform, env: main, tier: net}}
+      - equal: {path: metadata.annotations, value: {owner: sre, by: main}}
+      - equal: {path: spec.providerConfigRef, value: {name: pc-main}}
+      - equal: {path: spec.deletionPolicy, value: Delete}
+      - equal: {path: spec.managementPolicies, value: ["*"]}
+      - equal: {path: spec.initProvider, value: {tags: {a: "1", b: main}}}
+
+  - it: passes the settings to its dependants
+    set: *mainInherits
+    documentSelector: {path: kind, value: Subnet, matchMany: true}
+    asserts: *hasMainSettings
+
+  - it: passes the settings to the dependants of its dependants
+    set: *mainInherits
+    documentSelector: {path: kind, value: RouteTable, matchMany: true}
+    asserts: *hasMainSettings
+
+  - it: does not pass the settings to its siblings
+    set: *mainInherits
+    documentSelector: {path: metadata.name, value: other-vpc}
+    asserts: &hasGlobalSettings
+      - equal: {path: metadata.namespace, value: infra}
+      - equal: {path: metadata.labels, value: {team: platform, env: prod}}
+      - equal: {path: metadata.annotations, value: {owner: sre}}
+      - equal: {path: spec.providerConfigRef, value: {name: aws-prod}}
+      - equal: {path: spec.deletionPolicy, value: Orphan}
+      - equal: {path: spec.managementPolicies, value: ["*"]}
+      - equal: {path: spec.initProvider, value: {tags: {a: "1", b: "2"}}}
+
+  - it: passes the global settings when the resource has no settings of its own
+    set:
+      components.VPC.list.main.inherit: true
+    asserts: *hasGlobalSettings
+
+  - it: keeps forProvider and references of the dependants
+    set: *mainInherits
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            cidrBlock: 10.0.1.0/24
+            vpcIdRef: {name: main-vpc}
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - equal:
+          path: spec.forProvider
+          value:
+            vpcIdRef: {name: main-vpc}
+            subnetIdRef: {name: main-web-subnet}
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
+  - it: merges a dependant's own settings on top of the inherited ones
+    set:
+      <<: *mainInherits
+      components.VPC.list.main.dependants.Subnet.list.web.labels: {role: web}
+      components.VPC.list.main.dependants.Subnet.list.web.spec: {initProvider: {tags: {c: web}}}
+    documentSelector: {path: metadata.name, value: main-web-subnet}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-subnet
+            namespace: ns-main
+            labels: {team: platform, env: main, tier: net, role: web}
+            annotations: {owner: sre, by: main}
+      - equal:
+          path: spec
+          value:
+            providerConfigRef: {name: pc-main}
+            deletionPolicy: Delete
+            managementPolicies: ["*"]
+            initProvider: {tags: {a: "1", b: main, c: web}}
+            forProvider:
+              cidrBlock: 10.0.1.0/24
+              vpcIdRef: {name: main-vpc}
+
+  - it: lets a dependant override every inherited setting
+    set:
+      <<: *mainInherits
+      components.VPC.list.main.dependants.Subnet.list.web.dependants.RouteTable.list.rt:
+        providerConfigRef: {name: pc-rt}
+        namespace: ns-rt
+        labels: {env: rt}
+        annotations: {by: rt}
+        spec: {deletionPolicy: Orphan}
+    documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-rt-routetable
+            namespace: ns-rt
+            labels: {team: platform, env: rt, tier: net}
+            annotations: {owner: sre, by: rt}
+      - equal:
+          path: spec
+          value:
+            providerConfigRef: {name: pc-rt}
+            deletionPolicy: Orphan
+            managementPolicies: ["*"]
+            initProvider: {tags: {a: "1", b: main}}
+            forProvider:
+              vpcIdRef: {name: main-vpc}
+              subnetIdRef: {name: main-web-subnet}
+
+  - it: keeps a dependant's own settings on it when the dependant does not inherit
+    set: &webOverrides
+      <<: *mainInherits
+      components.VPC.list.main.dependants.Subnet.list.web.namespace: ns-web
+      components.VPC.list.main.dependants.Subnet.list.web.labels: {role: web}
+    documentSelector: {path: metadata.name, value: main-web-subnet}
+    asserts:
+      - equal: {path: metadata.namespace, value: ns-web}
+      - equal: {path: metadata.labels, value: {team: platform, env: main, tier: net, role: web}}
+
+  - it: passes the inherited settings past a dependant that does not inherit
+    set: *webOverrides
+    documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+    asserts: *hasMainSettings
+
+  - it: accumulates settings through nested inherit
+    set:
+      <<: *mainInherits
+      components.VPC.list.main.dependants.Subnet.list.web:
+        inherit: true
+        providerConfigRef: {name: pc-web}
+        namespace: ns-web
+        labels: {role: web}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-rt-routetable
+            namespace: ns-web
+            labels: {team: platform, env: main, tier: net, role: web}
+            annotations: {owner: sre, by: main}
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - equal:
+          path: spec.providerConfigRef
+          value: {name: pc-web}
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - equal:
+          path: spec.deletionPolicy
+          value: Delete
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - equal:
+          path: metadata.namespace
+          value: ns-main
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+
+  - it: starts from the global settings when a dependant inherits under a parent that does not
+    set:
+      components.VPC.list.main.namespace: ns-main
+      components.VPC.list.main.labels: {tier: net}
+      components.VPC.list.main.dependants.Subnet.list.web:
+        inherit: true
+        namespace: ns-web
+        labels: {role: web}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-rt-routetable
+            namespace: ns-web
+            labels: {team: platform, env: prod, role: web}
+            annotations: {owner: sre}
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - equal:
+          path: metadata.namespace
+          value: infra
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+
+  - it: passes removed values down as removed
+    set: &mainRemovals
+      components.VPC.list.main.inherit: true
+      components.VPC.list.main.namespace: null
+      components.VPC.list.main.labels.env: null
+      components.VPC.list.main.spec.managementPolicies: null
+    documentSelector: {path: kind, value: Subnet, matchMany: true}
+    asserts: &hasMainRemovals
+      - notExists: {path: metadata.namespace}
+      - equal: {path: metadata.labels, value: {team: platform}}
+      - notExists: {path: spec.managementPolicies}
+      - equal: {path: spec.deletionPolicy, value: Orphan}
+
+  - it: passes removed values down to the dependants of its dependants
+    set: *mainRemovals
+    documentSelector: {path: kind, value: RouteTable, matchMany: true}
+    asserts: *hasMainRemovals
+
+  - it: lets a dependant set a value its parent removed
+    set:
+      components.VPC.list.main.inherit: true
+      components.VPC.list.main.namespace: null
+      components.VPC.list.main.dependants.Subnet.list.web.namespace: ns-web
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: ns-web
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - notExists:
+          path: metadata.namespace
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - notExists:
+          path: metadata.namespace
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+
+  - it: passes the settings to every dependant kind, including ones listed by name
+    set:
+      components.Network:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        list:
+          core:
+            inherit: true
+            namespace: core
+            labels: {tier: core}
+            dependants:
+              Subnet:
+                list: [a, b]
+              SecurityGroup:
+                appendName: true
+                list:
+                  sg:
+                    labels: {kind: sg}
+              InternetGateway:
+                list:
+                  igw: null
+    asserts:
+      - equal: {path: metadata.namespace, value: core}
+        documentSelector: {path: metadata.name, value: core-a-subnet}
+      - equal: {path: metadata.namespace, value: core}
+        documentSelector: {path: metadata.name, value: core-b-subnet}
+      - equal: {path: metadata.namespace, value: core}
+        documentSelector: {path: metadata.name, value: core-igw-internetgateway}
+      - equal: {path: metadata.labels, value: {team: platform, env: prod, tier: core}}
+        documentSelector: {path: metadata.name, value: core-igw-internetgateway}
+      - equal:
+          path: metadata
+          value:
+            name: core-sg-securitygroup
+            namespace: core
+            labels: {team: platform, env: prod, tier: core, kind: sg}
+            annotations: {owner: sre}
+        documentSelector: {path: metadata.name, value: core-sg-securitygroup}
+      - equal:
+          path: spec.forProvider
+          value:
+            name: sg
+            networkIdRef: {name: core-network}
+        documentSelector: {path: metadata.name, value: core-sg-securitygroup}
+
+  - it: treats inherit null as false
+    set:
+      components.VPC.list.main.inherit: null
+      components.VPC.list.main.namespace: ns-main
+    asserts:
+      - equal: {path: metadata.namespace, value: ns-main}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: metadata.namespace, value: infra}
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+
+  - it: matches the namespace tree in the README
+    set:
+      components.VPC.list.main.inherit: true
+      components.VPC.list.main.namespace: network
+      components.VPC.list.main.dependants.Subnet.list.db.namespace: db
+      components.VPC.list.main.dependants.Subnet.list.db.dependants.RouteTable.list: [b]
+    asserts:
+      - equal: {path: metadata.namespace, value: network}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: metadata.namespace, value: network}
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - equal: {path: metadata.namespace, value: network}
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+      - equal: {path: metadata.namespace, value: db}
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+      - equal: {path: metadata.namespace, value: network}
+        documentSelector: {path: metadata.name, value: main-db-b-routetable}
+      - equal: {path: metadata.namespace, value: infra}
+        documentSelector: {path: metadata.name, value: other-vpc}

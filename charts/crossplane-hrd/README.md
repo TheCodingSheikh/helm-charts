@@ -401,11 +401,20 @@ The old `providerConfig` still works for now; if both are set, `global.providerC
 
 ## Testing
 
-The render tests need `helm` and `yq` (v4):
+The tests use the [helm-unittest](https://github.com/helm-unittest/helm-unittest) plugin:
 
 ```bash
-python3 charts/crossplane-hrd/tests/test_chart.py -v
+helm plugin install https://github.com/helm-unittest/helm-unittest.git  # on Helm 3 add: --version v1.0.3
+helm unittest charts/crossplane-hrd
 ```
+
+| Suite | Covers |
+|-------|--------|
+| `tests/components_test.yaml` | names, kinds, `apiVersion`, references, `refKey`, `appendName`, `list` formats |
+| `tests/global_test.yaml` | `global` settings on every resource |
+| `tests/overrides_test.yaml` | per resource overrides and the merge rules |
+| `tests/inherit_test.yaml` | `inherit` |
+| `tests/validation_test.yaml` | error messages for invalid values |
 
 ## Uninstall
 

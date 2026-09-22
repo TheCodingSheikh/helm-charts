@@ -1,0 +1,268 @@
+suite: resource overrides
+templates:
+  - templates/resources.yaml
+values:
+  - values/tree.yaml
+  - values/global.yaml
+tests:
+  - it: overrides every setting on a top level resource
+    set: &mainOverrides
+      components.VPC.list.main.providerConfigRef: {name: aws-staging}
+      components.VPC.list.main.namespace: net
+      components.VPC.list.main.labels: {env: staging, tier: network}
+      components.VPC.list.main.annotations: {owner: netops, note: x}
+      components.VPC.list.main.spec:
+        deletionPolicy: Delete
+        managementPolicies: [Observe]
+        initProvider: {tags: {b: "20", c: "3"}}
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-vpc
+            namespace: net
+            labels: {team: platform, env: staging, tier: network}
+            annotations: {owner: netops, note: x}
+      - equal:
+          path: spec
+          value:
+            providerConfigRef: {name: aws-staging}
+            deletionPolicy: Delete
+            managementPolicies: [Observe]
+            initProvider: {tags: {a: "1", b: "20", c: "3"}}
+            forProvider: {region: us-east-1}
+
+  - it: overrides every setting on a nested resource
+    set:
+      components.VPC.list.main.dependants.Subnet.list.web.dependants.RouteTable.list.rt:
+        providerConfigRef: {name: aws-rt}
+        namespace: rt
+        labels: {role: routing}
+        annotations: {owner: null}
+        spec: {deletionPolicy: Delete}
+    documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-rt-routetable
+            namespace: rt
+            labels: {team: platform, env: prod, role: routing}
+      - equal:
+          path: spec
+          value:
+            providerConfigRef: {name: aws-rt}
+            deletionPolicy: Delete
+            managementPolicies: ["*"]
+            initProvider: {tags: {a: "1", b: "2"}}
+            forProvider:
+              vpcIdRef: {name: main-vpc}
+              subnetIdRef: {name: main-web-subnet}
+
+  - it: does not pass a resource's overrides to its dependants (Subnet web)
+    set: *mainOverrides
+    documentSelector: {path: metadata.name, value: main-web-subnet}
+    asserts: &hasGlobalSettings
+      - equal: {path: metadata.namespace, value: infra}
+      - equal: {path: metadata.labels, value: {team: platform, env: prod}}
+      - equal: {path: metadata.annotations, value: {owner: sre}}
+      - equal: {path: spec.providerConfigRef, value: {name: aws-prod}}
+      - equal: {path: spec.deletionPolicy, value: Orphan}
+      - equal: {path: spec.managementPolicies, value: ["*"]}
+      - equal: {path: spec.initProvider, value: {tags: {a: "1", b: "2"}}}
+
+  - it: does not pass a resource's overrides to its dependants (Subnet db)
+    set: *mainOverrides
+    documentSelector: {path: metadata.name, value: main-db-subnet}
+    asserts: *hasGlobalSettings
+
+  - it: does not pass a resource's overrides to deeper dependants (RouteTable rt)
+    set: *mainOverrides
+    documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+    asserts: *hasGlobalSettings
+
+  - it: does not pass a resource's overrides to its siblings (VPC other)
+    set: *mainOverrides
+    documentSelector: {path: metadata.name, value: other-vpc}
+    asserts: *hasGlobalSettings
+
+  - it: behaves the same with an explicit inherit false
+    set:
+      <<: *mainOverrides
+      components.VPC.list.main.inherit: false
+    documentSelector: {path: metadata.name, value: main-web-subnet}
+    asserts: *hasGlobalSettings
+
+  - it: merges providerConfigRef with the inherited one
+    set:
+      global.providerConfigRef.kind: ClusterProviderConfig
+      components.VPC.list.main.providerConfigRef.name: team-a
+      components.VPC.list.other.providerConfigRef: {name: local, kind: ProviderConfig}
+    asserts:
+      - equal:
+          path: spec.providerConfigRef
+          value: {name: team-a, kind: ClusterProviderConfig}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal:
+          path: spec.providerConfigRef
+          value: {name: local, kind: ProviderConfig}
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - equal:
+          path: spec.providerConfigRef
+          value: {name: aws-prod, kind: ClusterProviderConfig}
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+
+  - it: merges nested providerConfigRef fields
+    set:
+      global.providerConfigRef.policy: {resolve: Always, resolution: Required}
+      components.VPC.list.main.providerConfigRef.policy.resolution: Optional
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: spec.providerConfigRef
+          value:
+            name: aws-prod
+            policy: {resolve: Always, resolution: Optional}
+
+  - it: keeps the inherited settings when given empty maps
+    set:
+      components.VPC.list.main.providerConfigRef: {}
+      components.VPC.list.main.labels: {}
+      components.VPC.list.main.annotations: {}
+      components.VPC.list.main.spec: {}
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts: *hasGlobalSettings
+
+  - it: removes a single inherited value set to null
+    set:
+      components.VPC.list.main.providerConfigRef.name: null
+      components.VPC.list.main.labels.env: null
+      components.VPC.list.main.annotations.owner: null
+      components.VPC.list.main.spec.deletionPolicy: null
+      components.VPC.list.main.spec.initProvider.tags.a: null
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-vpc
+            namespace: infra
+            labels: {team: platform}
+      - equal:
+          path: spec
+          value:
+            managementPolicies: ["*"]
+            initProvider: {tags: {b: "2"}}
+            forProvider: {region: us-east-1}
+
+  - it: removes all inherited values of a setting set to null
+    set:
+      components.VPC.list.main.providerConfigRef: null
+      components.VPC.list.main.labels: null
+      components.VPC.list.main.annotations: null
+      components.VPC.list.main.spec: null
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-vpc
+            namespace: infra
+      - equal:
+          path: spec
+          value:
+            forProvider: {region: us-east-1}
+
+  - it: keeps providerConfigRef when spec is set to null
+    set:
+      components.VPC.list.main.spec: null
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: spec
+          value:
+            providerConfigRef: {name: aws-prod}
+            forProvider: {region: us-east-1}
+
+  - it: renders no namespace when set to empty or null
+    set:
+      components.VPC.list.main.namespace: ""
+      components.VPC.list.other.namespace: null
+    asserts:
+      - notExists:
+          path: metadata.namespace
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - notExists:
+          path: metadata.namespace
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - equal:
+          path: metadata.namespace
+          value: infra
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+
+  - it: drops a null value that has nothing to remove
+    set:
+      components.VPC.list.main.labels: {x: null, y: z}
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: metadata.labels
+          value: {team: platform, env: prod, y: z}
+
+  - it: replaces inherited values with false, zero and empty string
+    set:
+      global.spec.watch: true
+      global.spec.rollbackLimit: 5
+      global.spec.policy: Always
+      components.VPC.list.main.spec: {watch: false, rollbackLimit: 0, policy: ""}
+    asserts:
+      - equal: {path: spec.watch, value: false}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: spec.rollbackLimit, value: 0}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: spec.policy, value: ""}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: spec.watch, value: true}
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - equal: {path: spec.rollbackLimit, value: 5}
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - equal: {path: spec.policy, value: Always}
+        documentSelector: {path: metadata.name, value: other-vpc}
+
+  - it: replaces lists instead of merging them
+    set:
+      components.VPC.list.main.spec.managementPolicies: [Observe, LateInitialize]
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: spec.managementPolicies
+          value: [Observe, LateInitialize]
+
+  - it: replaces a map with a value and a value with a map
+    set:
+      global.spec.a: {x: 1}
+      global.spec.b: plain
+      components.VPC.list.main.spec: {a: flat, b: {y: 2}}
+    asserts:
+      - equal: {path: spec.a, value: flat}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: spec.b, value: {y: 2}}
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal: {path: spec.a, value: {x: 1}}
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - equal: {path: spec.b, value: plain}
+        documentSelector: {path: metadata.name, value: other-vpc}
+
+  - it: gives dependants listed by name the global settings
+    set:
+      components.Network:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        list:
+          core:
+            namespace: core
+            dependants:
+              Subnet:
+                list: [a]
+    documentSelector: {path: metadata.name, value: core-a-subnet}
+    asserts: *hasGlobalSettings

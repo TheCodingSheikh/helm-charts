@@ -1,0 +1,187 @@
+suite: global settings
+templates:
+  - templates/resources.yaml
+values:
+  - values/tree.yaml
+tests:
+  - it: renders no settings by default
+    asserts:
+      - notExists:
+          path: metadata.namespace
+      - notExists:
+          path: metadata.labels
+      - notExists:
+          path: metadata.annotations
+      - notExists:
+          path: spec.providerConfigRef
+
+  - it: applies every global setting to every resource at every depth
+    values:
+      - values/global.yaml
+    asserts:
+      - hasDocuments:
+          count: 5
+      - equal:
+          path: metadata.namespace
+          value: infra
+      - equal:
+          path: metadata.labels
+          value:
+            team: platform
+            env: prod
+      - equal:
+          path: metadata.annotations
+          value:
+            owner: sre
+      - equal:
+          path: spec.providerConfigRef
+          value:
+            name: aws-prod
+      - equal:
+          path: spec.deletionPolicy
+          value: Orphan
+      - equal:
+          path: spec.managementPolicies
+          value: ["*"]
+      - equal:
+          path: spec.initProvider
+          value:
+            tags:
+              a: "1"
+              b: "2"
+
+  - it: renders the global settings next to forProvider and references
+    values:
+      - values/global.yaml
+    documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-web-rt-routetable
+            namespace: infra
+            labels:
+              team: platform
+              env: prod
+            annotations:
+              owner: sre
+      - equal:
+          path: spec
+          value:
+            providerConfigRef:
+              name: aws-prod
+            deletionPolicy: Orphan
+            managementPolicies: ["*"]
+            initProvider:
+              tags:
+                a: "1"
+                b: "2"
+            forProvider:
+              vpcIdRef:
+                name: main-vpc
+              subnetIdRef:
+                name: main-web-subnet
+
+  - it: renders providerConfigRef as given
+    set:
+      global.providerConfigRef:
+        name: default
+        kind: ClusterProviderConfig
+        policy:
+          resolve: Always
+    asserts:
+      - equal:
+          path: spec.providerConfigRef
+          value:
+            name: default
+            kind: ClusterProviderConfig
+            policy:
+              resolve: Always
+
+  - it: renders any other spec field as given
+    set:
+      global.spec:
+        writeConnectionSecretToRef:
+          name: conn
+          namespace: crossplane-system
+        publishConnectionDetailsTo:
+          name: conn
+          configRef:
+            name: vault
+        readiness:
+          policy: DeriveFromObject
+        watch: true
+    asserts:
+      - equal:
+          path: spec.writeConnectionSecretToRef
+          value:
+            name: conn
+            namespace: crossplane-system
+      - equal:
+          path: spec.publishConnectionDetailsTo
+          value:
+            name: conn
+            configRef:
+              name: vault
+      - equal:
+          path: spec.readiness
+          value:
+            policy: DeriveFromObject
+      - equal:
+          path: spec.watch
+          value: true
+
+  - it: renders label and annotation values as strings
+    set:
+      global.labels:
+        enabled: true
+        version: 2
+      global.annotations:
+        replicas: 3
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            enabled: "true"
+            version: "2"
+      - equal:
+          path: metadata.annotations
+          value:
+            replicas: "3"
+
+  - it: ignores keys that are not settings
+    set:
+      global.imageRegistry: docker.io
+      global.forProvider:
+        region: eu-west-1
+      global.inherit: true
+      components.VPC.list.main.namespace: net
+    asserts:
+      - equal:
+          path: spec
+          value:
+            forProvider:
+              region: us-east-1
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal:
+          path: metadata
+          value:
+            name: main-web-subnet
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+
+
+  - it: passes resource settings down with inherit when nothing is set globally
+    set:
+      components.VPC.list.main.inherit: true
+      components.VPC.list.main.namespace: net
+      components.VPC.list.main.labels: {tier: net}
+    asserts:
+      - equal: {path: metadata.namespace, value: net}
+        documentSelector: {path: kind, value: Subnet, matchMany: true}
+      - equal: {path: metadata.labels, value: {tier: net}}
+        documentSelector: {path: kind, value: RouteTable, matchMany: true}
+      - equal:
+          path: metadata
+          value:
+            name: other-vpc
+        documentSelector: {path: metadata.name, value: other-vpc}

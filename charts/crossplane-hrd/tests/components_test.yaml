@@ -1,0 +1,238 @@
+suite: components
+templates:
+  - templates/resources.yaml
+tests:
+  - it: renders nothing without components
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders one document per resource with its kind
+    values:
+      - values/tree.yaml
+    asserts:
+      - hasDocuments:
+          count: 5
+      - isKind:
+          of: VPC
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - isKind:
+          of: VPC
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - isKind:
+          of: Subnet
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - isKind:
+          of: Subnet
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+      - isKind:
+          of: RouteTable
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
+  - it: renders only name and forProvider when no settings are given
+    values:
+      - values/tree.yaml
+    documentSelector: {path: metadata.name, value: main-vpc}
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            name: main-vpc
+      - equal:
+          path: spec
+          value:
+            forProvider:
+              region: us-east-1
+
+  - it: renders an empty forProvider for a resource without one
+    values:
+      - values/tree.yaml
+    documentSelector: {path: metadata.name, value: other-vpc}
+    asserts:
+      - equal:
+          path: spec
+          value:
+            forProvider: {}
+
+  - it: renders a resource given as null like an empty one
+    set:
+      components:
+        Bucket:
+          apiVersion: s3.aws.upbound.io/v1beta1
+          list:
+            logs: null
+    documentSelector: {path: metadata.name, value: logs-bucket}
+    asserts:
+      - equal:
+          path: spec
+          value:
+            forProvider: {}
+
+  - it: converts the resource name to kebab case and lowercases the kind
+    set:
+      components:
+        S3Bucket:
+          apiVersion: s3.aws.upbound.io/v1beta1
+          list: [myLogs]
+    asserts:
+      - isKind:
+          of: S3Bucket
+        documentSelector: {path: metadata.name, value: my-logs-s3bucket}
+
+  - it: uses the parent apiVersion for dependants
+    values:
+      - values/tree.yaml
+    asserts:
+      - isAPIVersion:
+          of: ec2.aws.upbound.io/v1beta1
+
+  - it: passes an overridden apiVersion down to the dependants of the dependant
+    values:
+      - values/tree.yaml
+    set:
+      components.VPC.list.main.dependants.Subnet.apiVersion: ec2.aws.m.upbound.io/v1beta1
+    asserts:
+      - isAPIVersion:
+          of: ec2.aws.upbound.io/v1beta1
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - isAPIVersion:
+          of: ec2.aws.m.upbound.io/v1beta1
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - isAPIVersion:
+          of: ec2.aws.m.upbound.io/v1beta1
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+      - isAPIVersion:
+          of: ec2.aws.m.upbound.io/v1beta1
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
+  - it: adds a reference to every ancestor next to the resource's own forProvider
+    values:
+      - values/tree.yaml
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            cidrBlock: 10.0.1.0/24
+            vpcIdRef:
+              name: main-vpc
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - equal:
+          path: spec.forProvider
+          value:
+            vpcIdRef:
+              name: main-vpc
+            subnetIdRef:
+              name: main-web-subnet
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
+  - it: uses a custom refKey for references to a component
+    values:
+      - values/tree.yaml
+    set:
+      components.VPC.refKey: networkRef
+      components.VPC.list.main.dependants.Subnet.refKey: subnetRef
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            networkRef:
+              name: main-vpc
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+      - equal:
+          path: spec.forProvider
+          value:
+            networkRef:
+              name: main-vpc
+            subnetRef:
+              name: main-web-subnet
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
+  - it: accepts a list of names
+    set:
+      components:
+        Bucket:
+          apiVersion: s3.aws.upbound.io/v1beta1
+          list: [logs, assets]
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec
+          value:
+            forProvider: {}
+        documentSelector: {path: metadata.name, value: logs-bucket}
+      - equal:
+          path: spec
+          value:
+            forProvider: {}
+        documentSelector: {path: metadata.name, value: assets-bucket}
+
+  - it: adds references to dependants given as a list of names
+    set:
+      components:
+        VPC:
+          apiVersion: ec2.aws.upbound.io/v1beta1
+          list:
+            main:
+              dependants:
+                Subnet:
+                  list: [a, b]
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            vpcIdRef:
+              name: main-vpc
+        documentSelector: {path: metadata.name, value: main-a-subnet}
+      - equal:
+          path: spec.forProvider
+          value:
+            vpcIdRef:
+              name: main-vpc
+        documentSelector: {path: metadata.name, value: main-b-subnet}
+
+  - it: sets forProvider.name with appendName on a top level component only
+    values:
+      - values/tree.yaml
+    set:
+      components.VPC.appendName: true
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            name: main
+            region: us-east-1
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - equal:
+          path: spec.forProvider
+          value:
+            name: other
+        documentSelector: {path: metadata.name, value: other-vpc}
+      - notExists:
+          path: spec.forProvider.name
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+
+  - it: sets forProvider.name with appendName on a dependant component only
+    values:
+      - values/tree.yaml
+    set:
+      components.VPC.list.main.dependants.Subnet.appendName: true
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            name: web
+            cidrBlock: 10.0.1.0/24
+            vpcIdRef:
+              name: main-vpc
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - equal:
+          path: spec.forProvider.name
+          value: db
+        documentSelector: {path: metadata.name, value: main-db-subnet}
+      - notExists:
+          path: spec.forProvider.name
+        documentSelector: {path: metadata.name, value: main-vpc}
+      - notExists:
+          path: spec.forProvider.name
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}

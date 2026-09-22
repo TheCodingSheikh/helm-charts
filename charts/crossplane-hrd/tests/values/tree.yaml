@@ -1,0 +1,22 @@
+# VPC main ─┬─ Subnet web ── RouteTable rt
+#           └─ Subnet db
+# VPC other
+components:
+  VPC:
+    apiVersion: ec2.aws.upbound.io/v1beta1
+    list:
+      main:
+        forProvider:
+          region: us-east-1
+        dependants:
+          Subnet:
+            list:
+              web:
+                forProvider:
+                  cidrBlock: 10.0.1.0/24
+                dependants:
+                  RouteTable:
+                    list:
+                      rt: {}
+              db: {}
+      other: {}

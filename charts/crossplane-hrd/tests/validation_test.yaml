@@ -1,0 +1,82 @@
+suite: validation
+templates:
+  - templates/resources.yaml
+values:
+  - values/tree.yaml
+tests:
+  - it: rejects forProvider in global.spec
+    set:
+      global.spec.forProvider: {region: us-east-1}
+    asserts:
+      - failedTemplate:
+          errorPattern: 'global\.spec\.forProvider is not supported, use forProvider on the resource instead'
+
+  - it: rejects forProvider in a resource's spec
+    set:
+      components.VPC.list.main.dependants.Subnet.list.web.spec.forProvider: {region: us-east-1}
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.web\.spec\.forProvider is not supported'
+
+  - it: rejects providerConfigRef in global.spec
+    set:
+      global.spec.providerConfigRef: {name: aws}
+    asserts:
+      - failedTemplate:
+          errorPattern: 'global\.spec\.providerConfigRef is not supported, use global\.providerConfigRef instead'
+
+  - it: rejects providerConfigRef in a resource's spec
+    set:
+      components.VPC.list.main.dependants.Subnet.list.db.spec.providerConfigRef: {name: aws}
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.db\.spec\.providerConfigRef is not supported, use components\.VPC\.list\.main\.dependants\.Subnet\.list\.db\.providerConfigRef instead'
+
+  - it: rejects a providerConfigRef that is not a map
+    set:
+      components.VPC.list.main.providerConfigRef: aws-prod
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.providerConfigRef must be a map, e\.g\. \{name: aws-prod\}'
+
+  - it: rejects a namespace that is not a string
+    set:
+      components.VPC.list.main.namespace: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.namespace must be a string'
+
+  - it: rejects a global namespace that is not a string
+    set:
+      global.namespace: 5
+    asserts:
+      - failedTemplate:
+          errorPattern: 'global\.namespace must be a string'
+
+  - it: rejects labels that are not a map
+    set:
+      components.VPC.list.main.labels: [a]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.labels must be a map'
+
+  - it: rejects annotations that are not a map
+    set:
+      components.VPC.list.main.dependants.Subnet.list.db.annotations: x
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.db\.annotations must be a map'
+
+  - it: rejects a spec that is not a map
+    set:
+      components.VPC.list.other.spec: x
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.other\.spec must be a map'
+
+  - it: rejects an inherit that is not a boolean
+    set:
+      components.VPC.list.main.dependants.Subnet.list.web.dependants.RouteTable.list.rt.inherit: "yes"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.web\.dependants\.RouteTable\.list\.rt\.inherit must be true or false'
