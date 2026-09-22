@@ -3,6 +3,26 @@ entries:
   crossplane-hrd:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-09-22T12:16:21.968173125Z"
+    description: A Helm chart to manage Crossplane resources with ease of helm values.
+    digest: 2b0edf3dfc0f10abfe68c611ab7a403d69025a7022534d7290aaf383e08c15c5
+    keywords:
+    - crossplane
+    - compositions
+    - kubernetes
+    - helm
+    - terraform
+    maintainers:
+    - name: TheCodingSheikh
+    name: crossplane-hrd
+    sources:
+    - https://github.com/TheCodingSheikh/helm-charts/tree/main/charts/crossplane-hrd
+    type: application
+    urls:
+    - https://github.com/TheCodingSheikh/helm-charts/releases/download/crossplane-hrd-0.5.0/crossplane-hrd-0.5.0.tgz
+    version: 0.5.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-04-07T11:27:42.709822249Z"
     description: A Helm chart to manage Crossplane resources with ease of helm values.
     digest: 8642740febe6b85207071d537b9fd4cb64eab3025d34990fb2d8c020c72d018c
@@ -499,4 +519,4 @@ entries:
     urls:
     - https://github.com/TheCodingSheikh/helm-charts/releases/download/recurring-resources-0.1.0/recurring-resources-0.1.0.tgz
     version: 0.1.0
-generated: "2026-01-04T13:43:28.531867923Z"
+generated: "2026-09-22T12:16:21.968244493Z"
