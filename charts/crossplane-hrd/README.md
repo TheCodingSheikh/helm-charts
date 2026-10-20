@@ -103,6 +103,7 @@ A map of resource kinds. The key is rendered as `kind`; the same fields apply to
 |-------|------|---------|-------------|
 | `apiVersion` | string | parent's `apiVersion` | API version of the resources. Required at the top level; a dependant uses its parent's unless set, and passes it on to its own dependants. |
 | `refKey` | string | `<kind>IdRef` | Field name that dependants use in `forProvider` to reference resources of this kind, e.g. `vpcIdRef` for `VPC`. |
+| `refFrom` | string | | A field under this kind's `forProvider`, e.g. `path`. Dependants get that field's value as is under `refKey`, instead of `{name: ...}`. Requires `refKey`. See [Plain Value References](#plain-value-references). |
 | `appendName` | bool | `false` | Sets `forProvider.name` to the resource name. |
 | `list` | map or list | | The resources of this kind: a map of resource name to [resource fields](#resources), or a list of names for resources that need no fields. |
 
@@ -334,6 +335,44 @@ spec:
       name: main-vpc
 ```
 
+### Plain Value References
+Some fields take a plain value instead of a `{name: ...}` reference, e.g. Vault resources have a `namespace` string and no `namespaceRef`. Set `refFrom` to the parent's `forProvider` field that holds the value, and `refKey` to the field to set on its dependants:
+
+```yaml
+components:
+  VaultNamespace:
+    apiVersion: vault.vault.upbound.io/v1alpha1
+    refKey: namespace
+    refFrom: path
+    list:
+      team-a:
+        forProvider:
+          path: team-a
+        dependants:
+          Policy:
+            list:
+              readers:
+                forProvider:
+                  name: readers
+```
+
+**Renders** (the Policy):
+```yaml
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: team-a-readers-policy
+spec:
+  forProvider:
+    name: readers
+    namespace: team-a
+```
+
+- `refFrom` is read after `appendName` is applied, so `refFrom: name` works with `appendName: true`.
+- The value is copied as is, without the kebab case conversion of names.
+- `refKey` is required, and every resource of the kind must set the field, even one without dependants.
+- Crossplane waits for a `{name: ...}` reference to be ready, but not for a plain value, so a dependant may fail to reconcile until its parent exists, then succeed.
+
 ### API Version Override
 Dependants use their parent's `apiVersion` unless they set their own, which is then used by their dependants too:
 
@@ -410,7 +449,7 @@ helm unittest charts/crossplane-hrd
 
 | Suite | Covers |
 |-------|--------|
-| `tests/components_test.yaml` | names, kinds, `apiVersion`, references, `refKey`, `appendName`, `list` formats |
+| `tests/components_test.yaml` | names, kinds, `apiVersion`, references, `refKey`, `refFrom`, `appendName`, `list` formats |
 | `tests/global_test.yaml` | `global` settings on every resource |
 | `tests/overrides_test.yaml` | per resource overrides and the merge rules |
 | `tests/inherit_test.yaml` | `inherit` |

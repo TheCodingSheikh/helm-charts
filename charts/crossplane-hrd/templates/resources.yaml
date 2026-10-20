@@ -1,22 +1,25 @@
 {{- define "render-component" -}}
 {{- $parent := .parent | default (dict) -}}
-{{- $parentKind := $parent.kind | default "" -}}
 {{- $parentName := $parent.name | default "" -}}
-{{- $parentRefKey := $parent.refKey | default (printf "%sIdRef" (lower $parentKind)) -}}
 {{- $kind := .kind -}}
 {{- $apiVersion := .apiVersion -}}
 {{- $refKey := .refKey | default (printf "%sIdRef" (lower $kind)) -}}
+{{- $refFrom := .refFrom | default "" -}}
 {{- $appendName := .appendName | default false }}
 {{- $path := .path -}}
+
+{{- if not (kindIs "string" $refFrom) -}}
+  {{- fail (printf "%s.refFrom must be a string, e.g. path" $path) -}}
+{{- end -}}
+{{- if and $refFrom (not .refKey) -}}
+  {{- fail (printf "%s.refFrom requires refKey, e.g. refKey: namespace" $path) -}}
+{{- end -}}
 
 {{- /* Settings (providerConfigRef, namespace, labels, annotations, spec) this level starts from */ -}}
 {{- $base := .settings | default dict -}}
 
-{{- /* Collect all ancestor references */ -}}
-{{- $references := .references | default dict | deepCopy -}}
-{{- if and $parentKind $parentName }}
-{{- $_ := set $references $parentRefKey (trimPrefix "-" (printf "%s-%s" $parentName (lower $parentKind))) -}}
-{{- end }}
+{{- /* References to all ancestors, keyed by refKey, with the values to render */ -}}
+{{- $references := .references | default dict -}}
 
 {{- $list := .list }}
 
@@ -76,7 +79,7 @@ spec:
     {{- $_ := set $forProvider "name" $name }}
   {{- end }}
   {{- range $key, $value := $references }}
-    {{- $_ := set $forProvider $key (dict "name" (kebabcase $value)) }}
+    {{- $_ := set $forProvider $key $value }}
   {{- end }}
 
   {{- if $forProvider }}
@@ -85,11 +88,22 @@ spec:
   forProvider: {}
   {{- end}}
 
+{{- /* Reference dependants get to this resource: {name: <name>}, or forProvider.<refFrom> as is */}}
+{{- $childReferences := deepCopy $references }}
+{{- if $refFrom }}
+  {{- if or (not (hasKey $forProvider $refFrom)) (kindIs "invalid" (get $forProvider $refFrom)) }}
+    {{- fail (printf "%s.forProvider.%s is required by %s.refFrom" $resourcePath $refFrom $path) }}
+  {{- end }}
+  {{- $_ := set $childReferences $refKey (get $forProvider $refFrom) }}
+{{- else }}
+  {{- $_ := set $childReferences $refKey (dict "name" (kebabcase (trimPrefix "-" (printf "%s-%s-%s" $parentName $name (lower $kind))))) }}
+{{- end }}
+
 {{- /* render dependants, passing this resource's settings down only when inherit is enabled */}}
 {{- $childSettings := ternary $settings $base $inherit }}
 {{- $dependants := $config.dependants | default dict }}
   {{- range $childKind, $childConfig := $dependants }}
-{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "list" $childConfig.list "parent" (dict "kind" $kind "name" (trimPrefix "-" (printf "%s-%s" $parentName $name)) "refKey" $refKey) "references" $references "appendName" $childConfig.appendName "settings" $childSettings "path" (printf "%s.dependants.%s" $resourcePath $childKind)) }}
+{{ include "render-component" (dict "kind" $childKind "apiVersion" ($childConfig.apiVersion | default $apiVersion) "refKey" $childConfig.refKey "refFrom" $childConfig.refFrom "list" $childConfig.list "parent" (dict "name" (trimPrefix "-" (printf "%s-%s" $parentName $name))) "references" $childReferences "appendName" $childConfig.appendName "settings" $childSettings "path" (printf "%s.dependants.%s" $resourcePath $childKind)) }}
   {{- end }}
 {{- end }}
 {{- end }}
@@ -105,7 +119,7 @@ spec:
 {{- include "crossplane-hrd.applySettings" (dict "dst" $settings "src" ($values.global | default dict) "path" "global") -}}
 
 {{- range $kind, $config := $values.components -}}
-{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "list" $config.list "parent" (dict) "references" (dict) "appendName" $config.appendName "settings" $settings "path" (printf "components.%s" $kind)) }}
+{{ include "render-component" (dict "kind" $kind "apiVersion" $config.apiVersion "refKey" $config.refKey "refFrom" $config.refFrom "list" $config.list "parent" (dict) "references" (dict) "appendName" $config.appendName "settings" $settings "path" (printf "components.%s" $kind)) }}
 {{- end -}}
 {{- end }}
 

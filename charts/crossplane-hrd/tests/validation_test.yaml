@@ -80,3 +80,33 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.web\.dependants\.RouteTable\.list\.rt\.inherit must be true or false'
+
+  - it: rejects refFrom without refKey
+    set:
+      components.VPC.refFrom: region
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.refFrom requires refKey, e\.g\. refKey: namespace'
+
+  - it: rejects refFrom without refKey on a component without dependants
+    set:
+      components.VPC.list.main.dependants.Subnet.list.web.dependants.RouteTable.refFrom: region
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.main\.dependants\.Subnet\.list\.web\.dependants\.RouteTable\.refFrom requires refKey'
+
+  - it: rejects a refFrom that is not a string
+    set:
+      components.VPC.refKey: vpcRegion
+      components.VPC.refFrom: [region]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.refFrom must be a string, e\.g\. path'
+
+  - it: rejects a resource without the refFrom field
+    set:
+      components.VPC.refKey: vpcRegion
+      components.VPC.refFrom: region
+    asserts:
+      - failedTemplate:
+          errorPattern: 'components\.VPC\.list\.other\.forProvider\.region is required by components\.VPC\.refFrom'

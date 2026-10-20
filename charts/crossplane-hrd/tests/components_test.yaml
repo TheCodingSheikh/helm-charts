@@ -147,6 +147,95 @@ tests:
               name: main-web-subnet
         documentSelector: {path: metadata.name, value: main-web-rt-routetable}
 
+  - it: uses the refFrom value as is instead of a name reference
+    set:
+      components:
+        VaultNamespace:
+          apiVersion: vault.vault.upbound.io/v1alpha1
+          refKey: namespace
+          refFrom: path
+          list:
+            team-a:
+              forProvider:
+                path: Team_A
+              dependants:
+                Policy:
+                  list:
+                    readers:
+                      forProvider:
+                        name: readers
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            path: Team_A
+        documentSelector: {path: metadata.name, value: team-a-vaultnamespace}
+      - equal:
+          path: spec.forProvider
+          value:
+            name: readers
+            namespace: Team_A
+        documentSelector: {path: metadata.name, value: team-a-readers-policy}
+
+  - it: adds the refFrom value to every descendant next to name references
+    set:
+      components:
+        VaultNamespace:
+          apiVersion: vault.vault.upbound.io/v1alpha1
+          refKey: namespace
+          refFrom: path
+          list:
+            team-a:
+              forProvider:
+                path: team-a
+              dependants:
+                Mount:
+                  refKey: mountRef
+                  list:
+                    kv:
+                      forProvider:
+                        path: kv
+                      dependants:
+                        SecretV2:
+                          list:
+                            app: {}
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            path: kv
+            namespace: team-a
+        documentSelector: {path: metadata.name, value: team-a-kv-mount}
+      - equal:
+          path: spec.forProvider
+          value:
+            namespace: team-a
+            mountRef:
+              name: team-a-kv-mount
+        documentSelector: {path: metadata.name, value: team-a-kv-app-secretv2}
+
+  - it: reads refFrom from the rendered forProvider
+    values:
+      - values/tree.yaml
+    set:
+      components.VPC.appendName: true
+      components.VPC.refKey: vpcName
+      components.VPC.refFrom: name
+    asserts:
+      - equal:
+          path: spec.forProvider
+          value:
+            cidrBlock: 10.0.1.0/24
+            vpcName: main
+        documentSelector: {path: metadata.name, value: main-web-subnet}
+      - equal:
+          path: spec.forProvider
+          value:
+            vpcName: main
+            subnetIdRef:
+              name: main-web-subnet
+        documentSelector: {path: metadata.name, value: main-web-rt-routetable}
+
   - it: accepts a list of names
     set:
       components:
